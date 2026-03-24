@@ -10,8 +10,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#2563eb">
-    <link rel="icon" type="image/png" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
+    <link rel="icon" type="image/png" href="logo.png">
 
     <style>
         :root {
@@ -31,18 +31,28 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg-color); color: var(--text-main); padding: 15px; }
 
+        /* iPhone/Portrait Warning */
+        @media screen and (max-width: 900px) and (orientation: portrait) {
+            body::before {
+                content: "Please rotate your device to Landscape for the best trading view. 🔄";
+                position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                background: var(--primary); color: white; z-index: 9999;
+                display: flex; align-items: center; justify-content: center;
+                text-align: center; padding: 30px; font-weight: bold; font-size: 1.2rem;
+            }
+        }
+
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         h1 { font-size: 1.4rem; font-weight: 800; }
 
-        /* Controls Row */
+        /* Controls */
         #controls {
             display: flex; flex-wrap: wrap; gap: 15px; background: var(--surface);
             padding: 15px; border-radius: var(--radius); box-shadow: var(--shadow);
             margin-bottom: 20px; border: 1px solid var(--border);
         }
-
         .control-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 140px; }
-        .control-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .control-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
 
         .btn-group { display: flex; background: var(--bg-color); border-radius: 8px; padding: 3px; }
         .btn-group button {
@@ -50,7 +60,6 @@
             font-size: 12px; font-weight: 600; cursor: pointer; color: var(--text-muted);
         }
         .btn-group button.active { background: var(--surface); color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-
         select { padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-color); font-size: 13px; }
 
         /* Strategy Radio Pills */
@@ -61,7 +70,6 @@
             border-radius: 10px; cursor: pointer; flex-shrink: 0; transition: 0.2s;
         }
         .radio-option.active { background: var(--primary); color: white; border-color: var(--primary); }
-        .radio-option input { display: none; }
         .strat-profit { font-size: 12px; font-weight: 800; font-family: monospace; }
         .strat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; opacity: 0.8; }
 
@@ -85,12 +93,21 @@
         .stacked-data { display: flex; flex-direction: column; }
         .stacked-sub { font-size: 10px; color: var(--text-muted); font-family: monospace; }
 
-        /* Footer Status */
-        #status-container { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 15px; }
-        .sync-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; display: inline-block; }
+        /* FOOTER STATUS & MANUAL REFRESH */
+        #status-container { 
+            display: flex; justify-content: flex-end; align-items: center; gap: 10px; 
+            margin-top: 15px; cursor: pointer; padding: 5px; transition: opacity 0.2s;
+            user-select: none;
+        }
+        #status-container:active { opacity: 0.5; transform: scale(0.98); }
+        
+        .sync-dot { width: 10px; height: 10px; background: var(--green); border-radius: 50%; display: inline-block; }
         .sync-pulse { animation: syncPulse 2s infinite; }
-        @keyframes syncPulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
-        #status { font-size: 11px; color: var(--text-muted); font-family: monospace; }
+        @keyframes syncPulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(2.8); opacity: 0; } }
+        
+        #status { font-size: 12px; color: var(--text-muted); font-family: monospace; font-weight: 600; }
+        .refresh-hint { font-size: 9px; color: var(--primary); text-transform: uppercase; font-weight: bold; margin-right: 5px; opacity: 0; transition: 0.3s; }
+        #status-container:hover .refresh-hint { opacity: 1; }
 
         #alertToggle { padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border); background: white; cursor: pointer; font-size: 12px; font-weight: 600; }
         #alertToggle.active { background: var(--green); color: white; border-color: var(--green); }
@@ -112,11 +129,11 @@
         </div>
     </div>
     <div class="control-group">
-        <span class="control-label">Refresh</span>
+        <span class="control-label">Refresh Mode</span>
         <select id="refreshSelect">
-            <option value="0">Manual</option>
-            <option value="30">30s</option>
-            <option value="60">1m</option>
+            <option value="0">Manual (Click Dot)</option>
+            <option value="30">Auto 30s</option>
+            <option value="60">Auto 1m</option>
         </select>
     </div>
     <div class="control-group" style="flex: 2; min-width: 100%;">
@@ -128,16 +145,16 @@
 <div id="tableContainer" style="display:block;"><div id="tableWrap"></div></div>
 <div id="cardsContainer" style="display:none;"></div>
 
-<div id="status-container">
-    <div style="position:relative;">
+<div id="status-container" title="Click to Refresh Now">
+    <span class="refresh-hint">Tap to Refresh</span>
+    <div style="position:relative; width: 10px; height: 10px;">
         <span class="sync-dot"></span>
-        <span class="sync-dot sync-pulse" style="position:absolute; left:0;"></span>
+        <span class="sync-dot sync-pulse" style="position:absolute; left:0; top:0;"></span>
     </div>
-    <div id="status">Connecting...</div>
+    <div id="status">Syncing...</div>
 </div>
 
 <script>
-// Logic preserved from previous version with "Delta % Emphasis" and "10% Audio Alerts"
 const JSON_URL = "https://justforfunssn-default-rtdb.europe-west1.firebasedatabase.app/webAppref.json";
 let allData = {}; let currentListKey = ""; let alertsEnabled = false; let notifiedTrades = new Set();
 let audioCtx = null; let refreshInterval = null;
@@ -153,15 +170,27 @@ function playDing() {
     osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.5);
 }
 
+// FETCH FUNCTION
 async function fetchTrades() {
+    const statusText = document.getElementById("status");
+    const dot = document.querySelector(".sync-dot");
+    
+    statusText.textContent = "Syncing...";
+    dot.style.background = "#3b82f6"; // Turn blue during fetch
+    
     try {
         const res = await fetch(JSON_URL);
         allData = await res.json();
         updateUI();
-        document.getElementById("status").textContent = "Last Sync: " + new Date().toLocaleTimeString();
-    } catch (e) { document.getElementById("status").textContent = "Sync Error"; }
+        statusText.textContent = "Last Sync: " + new Date().toLocaleTimeString();
+        dot.style.background = "#10b981"; // Back to green
+    } catch (e) { 
+        statusText.textContent = "Sync Error"; 
+        dot.style.background = "#ef4444"; // Red on error
+    }
 }
 
+// UI RENDERING
 function updateUI() {
     const container = document.getElementById("radioGroup");
     const keys = Object.keys(allData);
@@ -171,10 +200,10 @@ function updateUI() {
         const profit = (allData[key] || []).reduce((a, t) => a + (t.profit_pct || 0), 0);
         const color = profit >= 0 ? 'val-green' : 'val-red';
         return `
-            <label class="radio-option ${currentListKey === key ? 'active' : ''}" onclick="switchStrat('${key}')">
+            <div class="radio-option ${currentListKey === key ? 'active' : ''}" onclick="switchStrat('${key}')">
                 <div class="strat-profit ${currentListKey === key ? '' : color}">${profit >= 0 ? '+' : ''}${profit.toFixed(2)}%</div>
                 <div class="strat-label">${key}</div>
-            </label>
+            </div>
         `;
     }).join('');
     renderData();
@@ -186,7 +215,6 @@ function renderData() {
     const trades = allData[currentListKey] || [];
     if(alertsEnabled) checkAlerts(trades);
     
-    // Table Render
     let tHtml = `<table><tr><th>Pair</th><th>Side</th><th>Entry</th><th>Price</th><th>Profit</th><th>Max Δ%</th><th>Min Δ%</th></tr>`;
     trades.forEach(t => {
         const isShort = t.is_short;
@@ -202,7 +230,6 @@ function renderData() {
     });
     document.getElementById("tableWrap").innerHTML = tHtml + `</table>`;
 
-    // Card Render
     document.getElementById("cardsContainer").innerHTML = trades.map(t => `
         <div class="card">
             <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
@@ -223,10 +250,13 @@ function checkAlerts(trades) {
         const id = `${currentListKey}-${t.pair}`;
         if(t.profit_pct >= 10 && !notifiedTrades.has(id)) {
             playDing(); notifiedTrades.add(id);
-            if(Notification.permission === "granted") new Notification("Target Hit!", {body: `${t.pair} is at ${t.profit_pct.toFixed(2)}%`});
+            if(Notification.permission === "granted") new Notification("Target Hit!", {body: `${t.pair} at ${t.profit_pct.toFixed(2)}%`});
         } else if (t.profit_pct < 9) notifiedTrades.delete(id);
     });
 }
+
+// EVENT LISTENERS
+document.getElementById('status-container').onclick = fetchTrades;
 
 document.getElementById('alertToggle').onclick = async (e) => {
     if(!alertsEnabled) {
@@ -240,8 +270,14 @@ document.getElementById('alertToggle').onclick = async (e) => {
 
 document.getElementById("tableBtn").onclick = () => { document.getElementById("tableContainer").style.display="block"; document.getElementById("cardsContainer").style.display="none"; document.getElementById("tableBtn").className="active"; document.getElementById("cardBtn").className=""; };
 document.getElementById("cardBtn").onclick = () => { document.getElementById("tableContainer").style.display="none"; document.getElementById("cardsContainer").style.display="grid"; document.getElementById("cardBtn").className="active"; document.getElementById("tableBtn").className=""; };
-document.getElementById("refreshSelect").onchange = (e) => { if(refreshInterval) clearInterval(refreshInterval); let s = parseInt(e.target.value); if(s > 0) refreshInterval = setInterval(fetchTrades, s*1000); };
 
+document.getElementById("refreshSelect").onchange = (e) => { 
+    if(refreshInterval) clearInterval(refreshInterval); 
+    let s = parseInt(e.target.value); 
+    if(s > 0) refreshInterval = setInterval(fetchTrades, s*1000); 
+};
+
+// Start
 fetchTrades();
 </script>
 </body>
