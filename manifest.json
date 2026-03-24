@@ -1,0 +1,16 @@
+{
+  "name": "Trade Matrix Dashboard",
+  "short_name": "TradeMatrix",
+  "description": "Live Crypto Trade Monitoring Strategy Dashboard",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#f0f4f8",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2950/2950150.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

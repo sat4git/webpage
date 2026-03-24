@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Trade Matrix | Live Dashboard</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#2563eb">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2950/2950150.png">
+
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --surface: #ffffff;
+            --primary: #2563eb;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --green: #10b981;
+            --green-bg: #d1fae5;
+            --red: #ef4444;
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg-color); color: var(--text-main); padding: 15px; }
+
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        h1 { font-size: 1.4rem; font-weight: 800; }
+
+        /* Controls Row */
+        #controls {
+            display: flex; flex-wrap: wrap; gap: 15px; background: var(--surface);
+            padding: 15px; border-radius: var(--radius); box-shadow: var(--shadow);
+            margin-bottom: 20px; border: 1px solid var(--border);
+        }
+
+        .control-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 140px; }
+        .control-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+        .btn-group { display: flex; background: var(--bg-color); border-radius: 8px; padding: 3px; }
+        .btn-group button {
+            flex: 1; border: none; background: transparent; padding: 8px; border-radius: 6px;
+            font-size: 12px; font-weight: 600; cursor: pointer; color: var(--text-muted);
+        }
+        .btn-group button.active { background: var(--surface); color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+        select { padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-color); font-size: 13px; }
+
+        /* Strategy Radio Pills */
+        #radioGroup { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+        .radio-option {
+            display: flex; flex-direction: column; align-items: center; min-width: 100px;
+            background: var(--bg-color); border: 1px solid var(--border); padding: 8px;
+            border-radius: 10px; cursor: pointer; flex-shrink: 0; transition: 0.2s;
+        }
+        .radio-option.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .radio-option input { display: none; }
+        .strat-profit { font-size: 12px; font-weight: 800; font-family: monospace; }
+        .strat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; opacity: 0.8; }
+
+        /* Table & Cards */
+        #tableContainer { background: var(--surface); border-radius: var(--radius); overflow-x: auto; box-shadow: var(--shadow); }
+        table { width: 100%; border-collapse: collapse; min-width: 650px; }
+        th, td { padding: 14px; border-bottom: 1px solid var(--border); text-align: left; font-size: 13px; }
+        th { background: #f8fafc; font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
+
+        .card { background: var(--surface); border-radius: var(--radius); padding: 15px; margin-bottom: 10px; box-shadow: var(--shadow); }
+        .side-badge { padding: 3px 8px; border-radius: 5px; font-size: 10px; font-weight: 800; }
+        .side-badge.long { background: #e0f2fe; color: #0369a1; }
+        .side-badge.short { background: #fdf2f8; color: #9d174d; }
+
+        /* Alert Visuals */
+        .val-green { color: var(--green); font-weight: 700; }
+        .val-red { color: var(--red); font-weight: 700; }
+        .glow-10 { animation: pulseGreen 1.5s infinite; background: var(--green-bg); padding: 2px 5px; border-radius: 4px; }
+        @keyframes pulseGreen { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+        .stacked-data { display: flex; flex-direction: column; }
+        .stacked-sub { font-size: 10px; color: var(--text-muted); font-family: monospace; }
+
+        /* Footer Status */
+        #status-container { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 15px; }
+        .sync-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; display: inline-block; }
+        .sync-pulse { animation: syncPulse 2s infinite; }
+        @keyframes syncPulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
+        #status { font-size: 11px; color: var(--text-muted); font-family: monospace; }
+
+        #alertToggle { padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border); background: white; cursor: pointer; font-size: 12px; font-weight: 600; }
+        #alertToggle.active { background: var(--green); color: white; border-color: var(--green); }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Trade Matrix</h1>
+    <button id="alertToggle">🔕 Alerts Off</button>
+</header>
+
+<div id="controls">
+    <div class="control-group">
+        <span class="control-label">View</span>
+        <div class="btn-group">
+            <button id="tableBtn" class="active">Table</button>
+            <button id="cardBtn">Cards</button>
+        </div>
+    </div>
+    <div class="control-group">
+        <span class="control-label">Refresh</span>
+        <select id="refreshSelect">
+            <option value="0">Manual</option>
+            <option value="30">30s</option>
+            <option value="60">1m</option>
+        </select>
+    </div>
+    <div class="control-group" style="flex: 2; min-width: 100%;">
+        <span class="control-label">Strategy</span>
+        <div id="radioGroup"></div>
+    </div>
+</div>
+
+<div id="tableContainer" style="display:block;"><div id="tableWrap"></div></div>
+<div id="cardsContainer" style="display:none;"></div>
+
+<div id="status-container">
+    <div style="position:relative;">
+        <span class="sync-dot"></span>
+        <span class="sync-dot sync-pulse" style="position:absolute; left:0;"></span>
+    </div>
+    <div id="status">Connecting...</div>
+</div>
+
+<script>
+// Logic preserved from previous version with "Delta % Emphasis" and "10% Audio Alerts"
+const JSON_URL = "https://justforfunssn-default-rtdb.europe-west1.firebasedatabase.app/webAppref.json";
+let allData = {}; let currentListKey = ""; let alertsEnabled = false; let notifiedTrades = new Set();
+let audioCtx = null; let refreshInterval = null;
+
+function initAudio() { if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if(audioCtx.state === 'suspended') audioCtx.resume(); }
+
+function playDing() {
+    if(!audioCtx) return;
+    const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+    osc.type = 'sine'; osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.5);
+    gain.gain.setValueAtTime(0.3, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+    osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+}
+
+async function fetchTrades() {
+    try {
+        const res = await fetch(JSON_URL);
+        allData = await res.json();
+        updateUI();
+        document.getElementById("status").textContent = "Last Sync: " + new Date().toLocaleTimeString();
+    } catch (e) { document.getElementById("status").textContent = "Sync Error"; }
+}
+
+function updateUI() {
+    const container = document.getElementById("radioGroup");
+    const keys = Object.keys(allData);
+    if(!currentListKey && keys.length > 0) currentListKey = keys[0];
+    
+    container.innerHTML = keys.map(key => {
+        const profit = (allData[key] || []).reduce((a, t) => a + (t.profit_pct || 0), 0);
+        const color = profit >= 0 ? 'val-green' : 'val-red';
+        return `
+            <label class="radio-option ${currentListKey === key ? 'active' : ''}" onclick="switchStrat('${key}')">
+                <div class="strat-profit ${currentListKey === key ? '' : color}">${profit >= 0 ? '+' : ''}${profit.toFixed(2)}%</div>
+                <div class="strat-label">${key}</div>
+            </label>
+        `;
+    }).join('');
+    renderData();
+}
+
+function switchStrat(key) { currentListKey = key; updateUI(); }
+
+function renderData() {
+    const trades = allData[currentListKey] || [];
+    if(alertsEnabled) checkAlerts(trades);
+    
+    // Table Render
+    let tHtml = `<table><tr><th>Pair</th><th>Side</th><th>Entry</th><th>Price</th><th>Profit</th><th>Max Δ%</th><th>Min Δ%</th></tr>`;
+    trades.forEach(t => {
+        const isShort = t.is_short;
+        tHtml += `<tr>
+            <td style="font-weight:700;">${t.pair}</td>
+            <td><span class="side-badge ${isShort ? 'short' : 'long'}">${isShort ? 'SHORT' : 'LONG'}</span></td>
+            <td class="stacked-sub">${t.open.toFixed(6)}</td>
+            <td class="stacked-sub">${t.current.toFixed(6)}</td>
+            <td><span class="${t.profit_pct >= 0 ? 'val-green' : 'val-red'} ${t.profit_pct >= 10 ? 'glow-10' : ''}">${t.profit_pct.toFixed(2)}%</span></td>
+            <td><div class="stacked-data"><span class="${!isShort ? 'val-green' : 'val-red'}">${t.max.delta_pct.toFixed(2)}%</span><span class="stacked-sub">${t.max.price.toFixed(6)}</span></div></td>
+            <td><div class="stacked-data"><span class="${isShort ? 'val-green' : 'val-red'}">${t.min.delta_pct.toFixed(2)}%</span><span class="stacked-sub">${t.min.price.toFixed(6)}</span></div></td>
+        </tr>`;
+    });
+    document.getElementById("tableWrap").innerHTML = tHtml + `</table>`;
+
+    // Card Render
+    document.getElementById("cardsContainer").innerHTML = trades.map(t => `
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                <span style="font-weight:800;">${t.pair}</span>
+                <span class="side-badge ${t.is_short ? 'short' : 'long'}">${t.is_short ? 'SHORT' : 'LONG'}</span>
+            </div>
+            <div style="font-size:18px; text-align:center; padding:10px;" class="${t.profit_pct >= 0 ? 'val-green' : 'val-red'}">${t.profit_pct.toFixed(2)}%</div>
+            <div style="display:flex; justify-content:space-between; font-size:11px; color:#64748b; border-top:1px solid #eee; padding-top:10px;">
+                <div class="stacked-data"><span>MAX Δ%</span><span class="${!t.is_short ? 'val-green' : 'val-red'}">${t.max.delta_pct.toFixed(2)}%</span></div>
+                <div class="stacked-data" style="text-align:right;"><span>MIN Δ%</span><span class="${t.is_short ? 'val-green' : 'val-red'}">${t.min.delta_pct.toFixed(2)}%</span></div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function checkAlerts(trades) {
+    trades.forEach(t => {
+        const id = `${currentListKey}-${t.pair}`;
+        if(t.profit_pct >= 10 && !notifiedTrades.has(id)) {
+            playDing(); notifiedTrades.add(id);
+            if(Notification.permission === "granted") new Notification("Target Hit!", {body: `${t.pair} is at ${t.profit_pct.toFixed(2)}%`});
+        } else if (t.profit_pct < 9) notifiedTrades.delete(id);
+    });
+}
+
+document.getElementById('alertToggle').onclick = async (e) => {
+    if(!alertsEnabled) {
+        if(Notification.permission !== "granted") await Notification.requestPermission();
+        initAudio(); alertsEnabled = true;
+        e.target.className = "active"; e.target.textContent = "🔔 Alerts Active";
+    } else {
+        alertsEnabled = false; e.target.className = ""; e.target.textContent = "🔕 Alerts Off";
+    }
+};
+
+document.getElementById("tableBtn").onclick = () => { document.getElementById("tableContainer").style.display="block"; document.getElementById("cardsContainer").style.display="none"; document.getElementById("tableBtn").className="active"; document.getElementById("cardBtn").className=""; };
+document.getElementById("cardBtn").onclick = () => { document.getElementById("tableContainer").style.display="none"; document.getElementById("cardsContainer").style.display="grid"; document.getElementById("cardBtn").className="active"; document.getElementById("tableBtn").className=""; };
+document.getElementById("refreshSelect").onchange = (e) => { if(refreshInterval) clearInterval(refreshInterval); let s = parseInt(e.target.value); if(s > 0) refreshInterval = setInterval(fetchTrades, s*1000); };
+
+fetchTrades();
+</script>
+</body>
+</html>
