@@ -5,10 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Trade Matrix Pro</title>
     
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+    <link rel="shortcut icon" href="logo.png">
+
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0b0f19">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -139,6 +144,7 @@ let audioCtx = null, refreshInterval = null, secondsRemaining = 0, currentTheme 
 function toggleTheme() {
     document.body.classList.toggle('dark-theme');
     currentTheme = document.body.classList.contains('dark-theme') ? 'dark' : 'light';
+    document.getElementById('themeToggle').textContent = currentTheme === 'dark' ? '🌙 Dark' : '☀️ Light';
 }
 
 function initAudio() { 
@@ -152,9 +158,9 @@ function playCriticalAlert() {
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = 'square';
-    osc.frequency.setValueAtTime(800, now);
-    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
-    gain.gain.setValueAtTime(0.7, now);
+    osc.frequency.setValueAtTime(850, now);
+    osc.frequency.exponentialRampToValueAtTime(1250, now + 0.12);
+    gain.gain.setValueAtTime(0.8, now);
     gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
@@ -162,7 +168,6 @@ function playCriticalAlert() {
     osc.stop(now + 0.5);
 }
 
-// Fixed Chart Symbol Logic
 function openChart(pair) {
     let clean = pair.replace(/[\/:\s\.]/g, '').replace('USDTUSDT', 'USDT');
     document.getElementById('chartSection').style.display = 'block';
@@ -180,13 +185,16 @@ function openChart(pair) {
 async function fetchTrades() {
     try {
         const res = await fetch(JSON_URL);
-        allData = await res.json();
-        const keys = Object.keys(allData);
-        if(!currentListKey && keys.length > 0) currentListKey = keys[0];
-        updateUI();
-        document.getElementById("status").textContent = "LIVE: " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        resetCountdown();
-    } catch (e) { console.error("Refresh failed", e); }
+        const newData = await res.json();
+        if (newData) {
+            allData = newData;
+            const keys = Object.keys(allData);
+            if(!currentListKey && keys.length > 0) currentListKey = keys[0];
+            updateUI();
+            document.getElementById("status").textContent = "LIVE: " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            resetCountdown();
+        }
+    } catch (e) { console.error("Refresh Error:", e); }
 }
 
 function updateUI() {
@@ -262,6 +270,7 @@ function handleAlertToggle() {
     if(!alertsEnabled) {
         alertsEnabled = true;
         btn.className = "icon-btn active"; btn.textContent = "🔔 ALERTS ON";
+        playCriticalAlert();
     } else {
         alertsEnabled = false; 
         btn.className = "icon-btn"; btn.textContent = "🔕 ALERTS OFF";
