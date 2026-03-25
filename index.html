@@ -51,6 +51,17 @@
         .strat-profit { font-size: 18px; font-weight: 800; font-family: 'JetBrains Mono', monospace; pointer-events: none; }
         .strat-label { font-size: 11px; font-weight: 700; text-transform: uppercase; margin-top: 4px; color: var(--text-muted); pointer-events: none; }
 
+        #chartSection {
+            display: none; position: relative; margin-bottom: 25px; 
+            background: var(--surface); border-radius: var(--radius); overflow: hidden; 
+            height: 500px; border: 1px solid var(--border);
+        }
+        #closeChart {
+            position: absolute; top: 12px; right: 12px; z-index: 10;
+            background: var(--red); color: white; border: none; padding: 6px 14px;
+            border-radius: 20px; cursor: pointer; font-size: 11px; font-weight: 700;
+        }
+
         #tableContainer { background: var(--surface); border-radius: var(--radius); overflow-x: auto; border: 1px solid var(--border); box-shadow: var(--shadow-md); }
         table { width: 100%; border-collapse: collapse; min-width: 800px; }
         th { background: var(--bg-color); padding: 14px 18px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; text-align: right; border-bottom: 1px solid var(--border); }
@@ -106,6 +117,11 @@
     </div>
 </div>
 
+<div id="chartSection">
+    <button id="closeChart" onclick="document.getElementById('chartSection').style.display='none'">✖ Close</button>
+    <div id="tradingview_widget" style="height: 100%; width: 100%;"></div>
+</div>
+
 <div id="tableContainer"><div id="tableWrap"></div></div>
 
 <div id="status-container" onclick="fetchTrades()">
@@ -114,21 +130,20 @@
     <div id="status">TAP TO SYNC</div>
 </div>
 
+<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
 <script>
 const JSON_URL = "https://justforfunssn-default-rtdb.europe-west1.firebasedatabase.app/webAppref.json";
 let allData = {}, currentListKey = "", alertsEnabled = false, notifiedTrades = new Set();
-let audioCtx = null, refreshInterval = null, secondsRemaining = 0;
+let audioCtx = null, refreshInterval = null, secondsRemaining = 0, currentTheme = 'dark';
 
 function toggleTheme() {
     document.body.classList.toggle('dark-theme');
+    currentTheme = document.body.classList.contains('dark-theme') ? 'dark' : 'light';
 }
 
-// Separate Audio Init from Main Flow
-async function initAudio() { 
-    try {
-        if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
-        if(audioCtx.state === 'suspended') await audioCtx.resume(); 
-    } catch(e) { console.error("Audio blocked", e); }
+function initAudio() { 
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+    if(audioCtx.state === 'suspended') audioCtx.resume(); 
 }
 
 function playCriticalAlert() {
@@ -147,28 +162,35 @@ function playCriticalAlert() {
     osc.stop(now + 0.5);
 }
 
+// Fixed Chart Symbol Logic
+function openChart(pair) {
+    let clean = pair.replace(/[\/:\s\.]/g, '').replace('USDTUSDT', 'USDT');
+    document.getElementById('chartSection').style.display = 'block';
+    new TradingView.widget({
+        "autosize": true, 
+        "symbol": "BINANCE:" + clean + ".P", 
+        "interval": "15",
+        "theme": currentTheme, 
+        "style": "1", 
+        "container_id": "tradingview_widget"
+    });
+    window.scrollTo({top: document.getElementById('chartSection').offsetTop - 20, behavior: 'smooth'});
+}
+
 async function fetchTrades() {
     try {
         const res = await fetch(JSON_URL);
-        const newData = await res.json();
-        if (newData) {
-            allData = newData;
-            const keys = Object.keys(allData);
-            if(!currentListKey && keys.length > 0) currentListKey = keys[0];
-            updateUI();
-            document.getElementById("status").textContent = "LIVE: " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-            resetCountdown();
-        }
-    } catch (e) { 
-        console.error("Fetch failed", e);
-        document.getElementById("status").textContent = "OFFLINE";
-    }
+        allData = await res.json();
+        const keys = Object.keys(allData);
+        if(!currentListKey && keys.length > 0) currentListKey = keys[0];
+        updateUI();
+        document.getElementById("status").textContent = "LIVE: " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        resetCountdown();
+    } catch (e) { console.error("Refresh failed", e); }
 }
 
 function updateUI() {
     const container = document.getElementById("radioGroup"), keys = Object.keys(allData);
-    if (!container) return;
-    
     container.innerHTML = keys.map(key => {
         const trades = allData[key] || [];
         const profit = trades.reduce((a, t) => a + (t.profit_pct || 0), 0);
@@ -198,7 +220,7 @@ function renderData() {
         const miP = (t.min && (t.min.price || t.min.rate || 0)) || 0;
 
         html += `<tr class="${isWin ? 'row-glow' : ''}">
-            <td style="text-align:left">📈 <b>${t.pair}</b></td>
+            <td style="text-align:left"><span class="pair-link" onclick="openChart('${t.pair}')">📈 ${t.pair}</span></td>
             <td><span class="side-badge ${t.is_short ? 'short' : 'long'}">${t.is_short ? 'S' : 'L'}</span></td>
             <td class="font-mono" style="opacity:0.6">${t.open.toFixed(5)}</td>
             <td class="font-mono">${t.current.toFixed(5)}</td>
@@ -236,8 +258,7 @@ function checkAlerts(trades) {
 
 function handleAlertToggle() {
     const btn = document.getElementById('alertToggle');
-    initAudio(); // Attempt audio unlock on this click
-    
+    initAudio();
     if(!alertsEnabled) {
         alertsEnabled = true;
         btn.className = "icon-btn active"; btn.textContent = "🔔 ALERTS ON";
@@ -261,7 +282,7 @@ setInterval(() => {
     if(secondsRemaining > 0) {
         secondsRemaining--;
         document.getElementById("timer").textContent = secondsRemaining;
-        if(secondsRemaining === 0) fetchTrades(); // Backup refresh call
+        if(secondsRemaining === 0) fetchTrades();
     }
 }, 1000);
 
@@ -276,7 +297,6 @@ document.getElementById("refreshSelect").onchange = (e) => {
     }
 };
 
-// Start Main App
 fetchTrades();
 </script>
 </body>
