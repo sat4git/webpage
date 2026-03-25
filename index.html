@@ -223,7 +223,7 @@ function renderData() {
             <td><span class="side-badge ${isShort ? 'short' : 'long'}">${isShort ? 'SHORT' : 'LONG'}</span></td>
             <td class="stacked-sub">${t.open.toFixed(6)}</td>
             <td class="stacked-sub">${t.current.toFixed(6)}</td>
-            <td><span class="${t.profit_pct >= 0 ? 'val-green' : 'val-red'} ${t.profit_pct >= 10 ? 'glow-10' : ''}">${t.profit_pct.toFixed(2)}%</span></td>
+            <td><span class="${t.profit_pct >= 0 ? 'val-green' : 'val-red'} ${t.profit_pct >= 1 ? 'glow-10' : ''}">${t.profit_pct.toFixed(2)}%</span></td>
             <td><div class="stacked-data"><span class="${!isShort ? 'val-green' : 'val-red'}">${t.max.delta_pct.toFixed(2)}%</span><span class="stacked-sub">${t.max.price.toFixed(6)}</span></div></td>
             <td><div class="stacked-data"><span class="${isShort ? 'val-green' : 'val-red'}">${t.min.delta_pct.toFixed(2)}%</span><span class="stacked-sub">${t.min.price.toFixed(6)}</span></div></td>
         </tr>`;
@@ -248,7 +248,7 @@ function renderData() {
 function checkAlerts(trades) {
     trades.forEach(t => {
         const id = `${currentListKey}-${t.pair}`;
-        if(t.profit_pct >= 10 && !notifiedTrades.has(id)) {
+        if(t.profit_pct >= 1 && !notifiedTrades.has(id)) {
             playDing(); notifiedTrades.add(id);
             if(Notification.permission === "granted") new Notification("Target Hit!", {body: `${t.pair} at ${t.profit_pct.toFixed(2)}%`});
         } else if (t.profit_pct < 9) notifiedTrades.delete(id);
