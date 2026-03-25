@@ -4,305 +4,1019 @@
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Trade Matrix Pro</title>
-
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="apple-touch-icon" href="logo.png">
-    <meta name="theme-color" content="#2563eb">
+    <meta name="theme-color" content="#0d1117">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@800&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
     <style>
+        /* ── TOKENS ─────────────────────────────────────────────── */
         :root {
-            --bg-color: #f0f4f8; --surface: #ffffff; --primary: #2563eb;
-            --text-main: #0f172a; --text-muted: #64748b; --border: #e2e8f0;
-            --green: #10b981; --green-bg: #d1fae5; --red: #ef4444; --red-bg: #fee2e2;
-            --radius: 12px; --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            --bg:        #0d1117;
+            --bg2:       #161b22;
+            --bg3:       #1c2333;
+            --surface:   #21262d;
+            --border:    rgba(255,255,255,0.07);
+            --border2:   rgba(255,255,255,0.13);
+            --primary:   #58a6ff;
+            --primary-d: #1f6feb;
+            --green:     #3fb950;
+            --green2:    #56d364;
+            --red:       #f85149;
+            --red2:      #ff7b72;
+            --yellow:    #e3b341;
+            --text:      #e6edf3;
+            --muted:     #7d8590;
+            --muted2:    #484f58;
+            --radius:    10px;
+            --radius-lg: 16px;
+            --mono:      'Space Mono', monospace;
+            --display:   'Syne', sans-serif;
+            --body:      'DM Sans', sans-serif;
+            --glow-g:    0 0 20px rgba(63,185,80,0.25);
+            --glow-r:    0 0 20px rgba(248,81,73,0.25);
+            --glow-b:    0 0 20px rgba(88,166,255,0.2);
         }
-
-        body.dark-theme {
-            --bg-color: #0b0f19; --surface: #151e2e; --primary: #3b82f6;
-            --text-main: #f8fafc; --text-muted: #94a3b8; --border: #1e293b;
-            --green-bg: rgba(16, 185, 129, 0.15); --red-bg: rgba(239, 68, 68, 0.2);
+        body.light {
+            --bg:      #f0f4f8;
+            --bg2:     #ffffff;
+            --bg3:     #f6f8fa;
+            --surface: #ffffff;
+            --border:  rgba(0,0,0,0.08);
+            --border2: rgba(0,0,0,0.14);
+            --text:    #0d1117;
+            --muted:   #57606a;
+            --muted2:  #c8cbd0;
+            --glow-g:  0 0 14px rgba(63,185,80,0.18);
+            --glow-r:  0 0 14px rgba(248,81,73,0.18);
+            --glow-b:  0 0 14px rgba(31,111,235,0.15);
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        
-        body { 
-            font-family: 'Inter', sans-serif; background: var(--bg-color); 
-            color: var(--text-main); padding: 16px; transition: 0.3s;
+
+        body {
+            font-family: var(--body);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            transition: background 0.3s, color 0.3s;
+            overflow-x: hidden;
         }
 
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .logo-area { display: flex; align-items: center; gap: 10px; }
-        .logo-area img { height: 32px; width: 32px; object-fit: contain; }
-        h1 { font-size: 1.5rem; font-weight: 900; letter-spacing: -0.02em; }
-        
-        .header-btns { display: flex; gap: 8px; }
-        .btn { background: var(--surface); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; color: var(--text-main); transition: 0.2s; }
-        .btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-        #alertToggle.active { background: #fbbf24; color: black; border-color: #fbbf24; box-shadow: 0 0 12px rgba(251, 191, 36, 0.5); }
-
-        /* ONE LINE CONTROLS */
-        #controls { 
-            display: flex; flex-wrap: nowrap; align-items: center; gap: 15px;
-            background: var(--surface); padding: 12px 16px; border-radius: var(--radius); 
-            box-shadow: var(--shadow); margin-bottom: 20px; border: 1px solid var(--border);
-            overflow-x: auto; scrollbar-width: none; white-space: nowrap;
+        /* ── NOISE TEXTURE ──────────────────────────────────────── */
+        body::before {
+            content: '';
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+            opacity: 0.4;
         }
-        
-        .btn-group { display: flex; background: var(--bg-color); border-radius: 8px; padding: 4px; flex-shrink: 0; }
-        .btn-group button { border: none; background: transparent; padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 700; color: var(--text-muted); cursor: pointer; }
-        .btn-group button.active { background: var(--surface); color: var(--text-main); box-shadow: var(--shadow); }
 
-        .control-divider { width: 1px; height: 24px; background: var(--border); flex-shrink: 0; }
+        .app { position: relative; z-index: 1; padding: 20px 24px; max-width: 1600px; margin: 0 auto; }
 
-        /* STRATEGY TABS */
-        #radioGroup { display: flex; gap: 10px; flex-grow: 1; }
-        .radio-option { 
-            padding: 6px 14px; border-radius: 8px; cursor: pointer; text-align: center; 
-            min-width: 90px; border: 2px solid transparent; position: relative; flex-shrink: 0;
+        /* ── HEADER ─────────────────────────────────────────────── */
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 24px; gap: 16px;
         }
-        .radio-option.strat-pos { background: var(--green); color: white; }
-        .radio-option.strat-neg { background: var(--red); color: white; }
-        .radio-option.active { border-color: var(--text-main); transform: translateY(-2px); box-shadow: var(--shadow); }
-        
-        .alert-dot { position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; background: #ffcc00; border: 2px solid white; border-radius: 50%; animation: pulseDot 0.8s infinite; display: none; }
-        @keyframes pulseDot { 50% { transform: scale(1.3); } }
+        .logo-area { display: flex; align-items: center; gap: 12px; }
+        .logo-area img { height: 36px; width: 36px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(88,166,255,0.4)); }
+        .logo-area h1 {
+            font-family: var(--display); font-size: 1.4rem; font-weight: 900;
+            letter-spacing: 0.06em; color: var(--text);
+        }
+        .logo-area h1 span { color: var(--primary); }
 
-        /* CHART SECTION (RESTORED) */
-        #chartSection { display: none; margin-bottom: 20px; height: 450px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); position: relative; }
-        #closeChart { position: absolute; top: 12px; right: 12px; z-index: 10; padding: 6px 14px; background: var(--red); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 800; font-size: 11px; }
+        .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
-        /* L/S CIRCLES */
-        .side-icon { 
+        /* ── STAT PILLS (header) ────────────────────────────────── */
+        #globalStats { display: flex; gap: 8px; }
+        .stat-pill {
+            display: flex; align-items: center; gap: 6px;
+            background: var(--bg2); border: 1px solid var(--border2);
+            border-radius: 20px; padding: 5px 12px; font-size: 11px;
+            font-family: var(--mono); font-weight: 700; white-space: nowrap;
+        }
+        .stat-pill .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+        .dot-green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+        .dot-red   { background: var(--red);   box-shadow: 0 0 6px var(--red); }
+        .dot-blue  { background: var(--primary); box-shadow: 0 0 6px var(--primary); }
+
+        /* ── ICON BUTTONS ───────────────────────────────────────── */
+        .icon-btn {
+            width: 36px; height: 36px; border-radius: 8px;
+            background: var(--bg2); border: 1px solid var(--border2);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 15px; transition: all 0.2s; color: var(--text);
+        }
+        .icon-btn:hover { background: var(--surface); border-color: var(--primary); box-shadow: var(--glow-b); }
+        .icon-btn.on { background: var(--yellow); border-color: var(--yellow); color: #000; box-shadow: 0 0 14px rgba(227,179,65,0.45); }
+
+        /* ── CONTROLS BAR ───────────────────────────────────────── */
+        #controls {
+            display: flex; flex-wrap: nowrap; align-items: center; gap: 12px;
+            background: var(--bg2); padding: 10px 16px;
+            border-radius: var(--radius-lg); border: 1px solid var(--border);
+            margin-bottom: 20px; overflow-x: auto; scrollbar-width: none;
+        }
+        #controls::-webkit-scrollbar { display: none; }
+
+        .seg-ctrl {
+            display: flex; background: var(--bg3); border-radius: 8px;
+            padding: 3px; gap: 2px; flex-shrink: 0; border: 1px solid var(--border);
+        }
+        .seg-btn {
+            border: none; background: transparent; padding: 5px 14px;
+            border-radius: 6px; font-size: 11px; font-weight: 700;
+            font-family: var(--display); letter-spacing: 0.05em;
+            color: var(--muted); cursor: pointer; transition: all 0.18s;
+        }
+        .seg-btn.active {
+            background: var(--surface); color: var(--text);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        }
+
+        .ctrl-sep { width: 1px; height: 22px; background: var(--border2); flex-shrink: 0; }
+
+        .styled-select {
+            background: var(--bg3); border: 1px solid var(--border2);
+            color: var(--text); padding: 5px 10px; border-radius: 7px;
+            font-size: 11px; font-weight: 700; font-family: var(--display);
+            letter-spacing: 0.05em; cursor: pointer; outline: none; flex-shrink: 0;
+        }
+
+        /* ── STRATEGY TABS ──────────────────────────────────────── */
+        #radioGroup { display: flex; gap: 8px; }
+        .strat-tab {
+            position: relative; padding: 6px 14px; border-radius: 9px;
+            cursor: pointer; flex-shrink: 0; border: 2px solid transparent;
+            transition: all 0.2s; min-width: 80px; text-align: center;
+        }
+        .strat-tab.pos { background: linear-gradient(135deg, rgba(63,185,80,0.25), rgba(63,185,80,0.1)); border-color: rgba(63,185,80,0.3); }
+        .strat-tab.neg { background: linear-gradient(135deg, rgba(248,81,73,0.25), rgba(248,81,73,0.1)); border-color: rgba(248,81,73,0.3); }
+        .strat-tab.active.pos { border-color: var(--green2); box-shadow: var(--glow-g); transform: translateY(-1px); }
+        .strat-tab.active.neg { border-color: var(--red2);   box-shadow: var(--glow-r); transform: translateY(-1px); }
+        .strat-tab .t-pct  { font-family: var(--mono); font-size: 13px; font-weight: 700; }
+        .strat-tab .t-name { font-size: 9px; font-weight: 700; font-family: var(--display); letter-spacing: 0.08em; color: var(--muted); margin-top: 1px; }
+        .strat-tab.pos .t-pct { color: var(--green2); }
+        .strat-tab.neg .t-pct { color: var(--red2); }
+
+        .alert-dot {
+            position: absolute; top: -4px; right: -4px;
+            width: 10px; height: 10px; background: var(--yellow);
+            border: 2px solid var(--bg); border-radius: 50%; display: none;
+            animation: pulseDot 0.9s ease-in-out infinite;
+        }
+        @keyframes pulseDot { 0%,100% { transform: scale(1); opacity:1; } 50% { transform: scale(1.4); opacity:0.7; } }
+
+        /* ── SUMMARY STRIP ──────────────────────────────────────── */
+        #summaryStrip {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px; margin-bottom: 20px;
+        }
+        .summary-card {
+            background: var(--bg2); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 14px 16px;
+            display: flex; flex-direction: column; gap: 4px;
+            transition: border-color 0.2s;
+        }
+        .summary-card:hover { border-color: var(--border2); }
+        .summary-card .sc-label { font-size: 10px; font-weight: 700; font-family: var(--display); letter-spacing: 0.09em; color: var(--muted); text-transform: uppercase; }
+        .summary-card .sc-val   { font-family: var(--mono); font-size: 20px; font-weight: 700; }
+        .summary-card .sc-sub   { font-size: 11px; color: var(--muted); }
+        .sc-green { color: var(--green2); }
+        .sc-red   { color: var(--red2); }
+        .sc-blue  { color: var(--primary); }
+        .sc-yellow{ color: var(--yellow); }
+
+        /* ── CHART SECTION ──────────────────────────────────────── */
+        #chartSection {
+            display: none; margin-bottom: 20px; height: 460px;
+            border-radius: var(--radius-lg); overflow: hidden;
+            border: 1px solid var(--border2); position: relative;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            animation: slideDown 0.25s ease;
+        }
+        @keyframes slideDown { from { opacity:0; transform: translateY(-10px); } to { opacity:1; transform: translateY(0); } }
+        #closeChart {
+            position: absolute; top: 12px; right: 12px; z-index: 10;
+            padding: 5px 12px; background: var(--red); color: white;
+            border: none; border-radius: 6px; cursor: pointer;
+            font-weight: 800; font-size: 11px; font-family: var(--display); letter-spacing: 0.05em;
+        }
+
+        /* ── TABLE ──────────────────────────────────────────────── */
+        #tableWrap {
+            background: var(--bg2); border-radius: var(--radius-lg);
+            border: 1px solid var(--border); overflow: hidden;
+        }
+
+        /* search / filter bar */
+        #tableToolbar {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 16px; border-bottom: 1px solid var(--border);
+        }
+        #searchInput {
+            flex: 1; background: var(--bg3); border: 1px solid var(--border2);
+            color: var(--text); border-radius: 7px; padding: 6px 12px;
+            font-size: 12px; font-family: var(--mono); outline: none;
+        }
+        #searchInput::placeholder { color: var(--muted2); }
+        .filter-btn {
+            padding: 5px 12px; border-radius: 7px; font-size: 11px; font-weight: 700;
+            font-family: var(--display); letter-spacing: 0.05em;
+            border: 1px solid var(--border2); background: transparent; color: var(--muted);
+            cursor: pointer; transition: all 0.15s; white-space: nowrap;
+        }
+        .filter-btn.on { background: var(--surface); color: var(--text); border-color: var(--border2); }
+
+        .tbl-scroll { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 860px; }
+        thead th {
+            text-align: left; padding: 11px 16px; font-size: 10px; font-weight: 700;
+            font-family: var(--display); letter-spacing: 0.1em; text-transform: uppercase;
+            color: var(--muted); background: var(--bg3); border-bottom: 1px solid var(--border);
+            white-space: nowrap; cursor: pointer; user-select: none;
+        }
+        thead th:hover { color: var(--text); }
+        thead th .sort-arrow { opacity: 0.4; margin-left: 4px; font-size: 9px; }
+        thead th.sorted .sort-arrow { opacity: 1; color: var(--primary); }
+
+        tbody tr { transition: background 0.15s; border-bottom: 1px solid var(--border); }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: rgba(255,255,255,0.03); }
+        td { padding: 13px 16px; font-size: 13px; vertical-align: middle; }
+
+        .tr-profit { background: linear-gradient(90deg, rgba(63,185,80,0.07) 0%, transparent 60%); }
+        .tr-profit td:first-child { border-left: 3px solid var(--green2); }
+        .tr-loss   { background: linear-gradient(90deg, rgba(248,81,73,0.09) 0%, transparent 60%); }
+        .tr-loss   td:first-child { border-left: 3px solid var(--red2); }
+
+        .pair-link {
+            font-family: var(--mono); font-weight: 700; font-size: 13px;
+            color: var(--primary); cursor: pointer; text-decoration: none;
+            transition: color 0.15s;
+        }
+        .pair-link:hover { color: #79c0ff; text-decoration: underline; }
+
+        .side-badge {
             display: inline-flex; align-items: center; justify-content: center;
-            width: 26px; height: 26px; border-radius: 50%; 
-            font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 13px; color: white;
+            width: 24px; height: 24px; border-radius: 6px;
+            font-family: var(--mono); font-weight: 700; font-size: 11px;
         }
-        .side-icon.l { background: var(--green); }
-        .side-icon.s { background: var(--red); }
+        .side-badge.l { background: rgba(63,185,80,0.2); color: var(--green2); border: 1px solid rgba(63,185,80,0.3); }
+        .side-badge.s { background: rgba(248,81,73,0.2); color: var(--red2);   border: 1px solid rgba(248,81,73,0.3); }
 
-        /* TABLE */
-        #tableContainer { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow-x: auto; border: 1px solid var(--border); }
-        table { width: 100%; border-collapse: collapse; min-width: 800px; }
-        th { text-align: left; padding: 14px 16px; font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.02); }
-        td { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 14px; }
-        
-        .row-profit { animation: glowGreen 2s infinite; }
-        .row-loss { background-color: var(--red-bg) !important; border-left: 4px solid var(--red); }
-        @keyframes glowGreen { 50% { background-color: var(--green-bg); } }
+        .mono { font-family: var(--mono); }
 
-        /* CARDS */
-        .card { background: var(--surface); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
-        .card-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
-        .label { color: var(--text-muted); font-weight: 600; }
+        .pct-val { font-family: var(--mono); font-weight: 700; font-size: 14px; }
+        .pct-pos { color: var(--green2); }
+        .pct-neg { color: var(--red2); }
 
-        #footer-bar { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 20px; color: var(--text-muted); font-size: 12px; font-weight: 800; }
-        .sync-icon { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--text-muted); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; display: none; }
-        .sync-icon.active { display: inline-block; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .delta-cell { display: flex; flex-direction: column; gap: 2px; }
+        .delta-main { font-family: var(--mono); font-weight: 700; font-size: 12px; }
+        .delta-sub  { font-family: var(--mono); font-size: 10px; color: var(--muted); }
 
-        .pair-name { color: var(--primary); cursor: pointer; font-weight: 800; text-decoration: underline; }
-        .monospace { font-family: 'JetBrains Mono', monospace; }
+        /* NEW: duration, risk-reward, distance cols */
+        .badge-duration {
+            display: inline-block; background: var(--bg3); border: 1px solid var(--border2);
+            border-radius: 5px; padding: 2px 7px; font-family: var(--mono); font-size: 11px; color: var(--muted);
+        }
+        .rr-bar-wrap { display: flex; align-items: center; gap: 6px; }
+        .rr-bar { height: 5px; border-radius: 3px; background: var(--bg3); width: 60px; overflow: hidden; }
+        .rr-bar-fill { height: 100%; border-radius: 3px; transition: width 0.4s; }
+        .rr-val { font-family: var(--mono); font-size: 11px; font-weight: 700; }
+        .dist-cell { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
+        /* ── CARDS ──────────────────────────────────────────────── */
+        #cardsGrid {
+            display: none;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 14px;
+        }
+        .trade-card {
+            background: var(--bg2); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 16px;
+            transition: all 0.2s; position: relative; overflow: hidden;
+        }
+        .trade-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        }
+        .trade-card.card-pos::before { background: linear-gradient(90deg, var(--green), var(--green2)); }
+        .trade-card.card-neg::before { background: linear-gradient(90deg, var(--red), var(--red2)); }
+        .trade-card:hover { transform: translateY(-2px); border-color: var(--border2); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+        .card-top  { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .card-pct  { font-family: var(--mono); font-size: 26px; font-weight: 700; line-height: 1; margin: 8px 0 12px; }
+        .card-row  { display: flex; justify-content: space-between; align-items: center; font-size: 12px; padding: 4px 0; border-bottom: 1px solid var(--border); }
+        .card-row:last-child { border-bottom: none; }
+        .card-label { color: var(--muted); font-weight: 600; }
+        .card-val   { font-family: var(--mono); font-size: 12px; }
+
+        /* ── SPARKLINE ──────────────────────────────────────────── */
+        .sparkline { display: inline-block; vertical-align: middle; }
+
+        /* ── FOOTER ─────────────────────────────────────────────── */
+        #footer {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-top: 20px; color: var(--muted); font-size: 11px; font-family: var(--mono);
+            flex-wrap: wrap; gap: 8px;
+        }
+        .spinner {
+            display: none; width: 12px; height: 12px;
+            border: 2px solid var(--muted2); border-top-color: var(--primary);
+            border-radius: 50%; animation: spin 0.7s linear infinite;
+        }
+        .spinner.on { display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── TOAST ──────────────────────────────────────────────── */
+        #toast {
+            position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+            background: var(--surface); border: 1px solid var(--border2);
+            border-radius: var(--radius); padding: 12px 18px;
+            font-size: 13px; font-weight: 600; color: var(--text);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            transform: translateY(80px); opacity: 0;
+            transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+            pointer-events: none; max-width: 300px;
+        }
+        #toast.show { transform: translateY(0); opacity: 1; }
+
+        /* ── CHART OVERLAY INFO ─────────────────────────────────── */
+        #chartInfo {
+            position: absolute; top: 12px; left: 12px; z-index: 10;
+            background: rgba(13,17,23,0.88); backdrop-filter: blur(8px);
+            border: 1px solid var(--border2); border-radius: var(--radius);
+            padding: 10px 14px; min-width: 220px; font-size: 12px;
+            display: none; pointer-events: none;
+        }
+        body.light #chartInfo { background: rgba(255,255,255,0.9); }
+        .ci-row { display: flex; justify-content: space-between; gap: 20px; padding: 3px 0; border-bottom: 1px solid var(--border); }
+        .ci-row:last-child { border: none; }
+        .ci-label { color: var(--muted); font-family: var(--display); font-size: 10px; letter-spacing: 0.07em; text-transform: uppercase; }
+        .ci-val   { font-family: var(--mono); font-weight: 700; font-size: 12px; }
+        .ci-loading { color: var(--muted); font-family: var(--mono); font-size: 11px; }
+        #chartInfoTitle { font-family: var(--display); font-weight: 900; font-size: 13px; margin-bottom: 8px; color: var(--primary); letter-spacing: 0.05em; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--muted2); border-radius: 3px; }
+
+        /* ── RESPONSIVE ─────────────────────────────────────────── */
+        @media (max-width: 600px) {
+            .app { padding: 12px; }
+            #summaryStrip { grid-template-columns: repeat(2, 1fr); }
+            #globalStats { display: none; }
+        }
     </style>
 </head>
 <body class="dark-theme">
+<div class="app">
 
+<!-- HEADER -->
 <header>
     <div class="logo-area">
         <img src="logo.png" alt="Logo">
-        <h1>TRADE MATRIX</h1>
+        <h1>TRADE<span>MATRIX</span></h1>
     </div>
-    <div class="header-btns">
-        <button class="btn" onclick="document.body.classList.toggle('dark-theme')">🌙 MODE</button>
-        <button id="alertToggle" class="btn" onclick="toggleAlerts()">🔕 ALERTS OFF</button>
+    <div class="header-right">
+        <div id="globalStats">
+            <div class="stat-pill"><span class="dot dot-blue"></span><span id="gTotal">— TRADES</span></div>
+            <div class="stat-pill"><span class="dot dot-green"></span><span id="gWin">— W</span></div>
+            <div class="stat-pill"><span class="dot dot-red"></span><span id="gLoss">— L</span></div>
+        </div>
+        <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+        <button class="icon-btn" id="alertBtn" onclick="toggleAlerts()" title="Toggle alerts">🔕</button>
+        <button class="icon-btn" onclick="sync()" title="Manual sync">↺</button>
     </div>
 </header>
 
+<!-- CONTROLS -->
 <div id="controls">
-    <div class="btn-group">
-        <button id="tableBtn" class="active">TABLE</button>
-        <button id="cardBtn">CARDS</button>
+    <div class="seg-ctrl">
+        <button class="seg-btn active" id="tblBtn" onclick="switchView('table')">TABLE</button>
+        <button class="seg-btn"        id="crdBtn" onclick="switchView('cards')">CARDS</button>
     </div>
-    <div class="control-divider"></div>
-    <select id="refreshSelect" class="btn" style="padding: 6px 12px; font-size: 12px;">
+    <div class="ctrl-sep"></div>
+    <select id="refreshSelect" class="styled-select" onchange="setRefresh(this.value)">
         <option value="0">MANUAL</option>
-        <option value="30">30S</option>
+        <option value="15">15 SEC</option>
+        <option value="30">30 SEC</option>
+        <option value="60">1 MIN</option>
         <option value="300">5 MIN</option>
     </select>
-    <div class="control-divider"></div>
+    <div class="ctrl-sep"></div>
     <div id="radioGroup"></div>
 </div>
 
+<!-- SUMMARY STRIP -->
+<div id="summaryStrip">
+    <div class="summary-card">
+        <div class="sc-label">Total P&L</div>
+        <div class="sc-val" id="sTotalPnl">—</div>
+        <div class="sc-sub" id="sTotalPnlSub">all strategies</div>
+    </div>
+    <div class="summary-card">
+        <div class="sc-label">Open Trades</div>
+        <div class="sc-val sc-blue" id="sCount">—</div>
+        <div class="sc-sub" id="sCountSub">active positions</div>
+    </div>
+    <div class="summary-card">
+        <div class="sc-label">Win Rate</div>
+        <div class="sc-val sc-green" id="sWinRate">—</div>
+        <div class="sc-sub" id="sWinRateSub">— W / — L</div>
+    </div>
+    <div class="summary-card">
+        <div class="sc-label">Best Trade</div>
+        <div class="sc-val sc-green" id="sBest">—</div>
+        <div class="sc-sub" id="sBestSub">—</div>
+    </div>
+    <div class="summary-card">
+        <div class="sc-label">Worst Trade</div>
+        <div class="sc-val sc-red" id="sWorst">—</div>
+        <div class="sc-sub" id="sWorstSub">—</div>
+    </div>
+    <div class="summary-card">
+        <div class="sc-label">Avg P&L</div>
+        <div class="sc-val sc-yellow" id="sAvg">—</div>
+        <div class="sc-sub">per trade</div>
+    </div>
+</div>
+
+<!-- CHART -->
 <div id="chartSection">
-    <button id="closeChart" onclick="document.getElementById('chartSection').style.display='none'">✖ CLOSE</button>
-    <div id="tv_chart_container" style="height: 100%;"></div>
+    <button id="closeChart" onclick="closeChart()">✕ CLOSE</button>
+    <div id="chartInfo">
+        <div id="chartInfoTitle">—</div>
+        <div class="ci-row"><span class="ci-label">Side</span><span class="ci-val" id="ci-side">—</span></div>
+        <div class="ci-row"><span class="ci-label">Entry Price</span><span class="ci-val" id="ci-entry">—</span></div>
+        <div class="ci-row"><span class="ci-label">Entry Time</span><span class="ci-val" id="ci-etime">—</span></div>
+        <div class="ci-row"><span class="ci-label">Current</span><span class="ci-val" id="ci-current">—</span></div>
+        <div class="ci-row"><span class="ci-label">P&L</span><span class="ci-val" id="ci-pnl">—</span></div>
+        <div class="ci-row"><span class="ci-label">Max Price</span><span class="ci-val" id="ci-maxprice">—</span></div>
+        <div class="ci-row"><span class="ci-label">Max Time</span><span class="ci-val" id="ci-maxtime"><span class="ci-loading">fetching…</span></span></div>
+        <div class="ci-row"><span class="ci-label">Max Δ</span><span class="ci-val" id="ci-maxdelta">—</span></div>
+    </div>
+    <div id="tv_chart_container" style="height:100%;"></div>
 </div>
 
-<div id="tableContainer">
-    <table>
-        <thead><tr><th>Pair</th><th>Side</th><th>Entry</th><th>Current</th><th>Profit</th><th>Max (Δ%)</th><th>Min (Δ%)</th></tr></thead>
-        <tbody id="tableBody"></tbody>
-    </table>
+<!-- TABLE VIEW -->
+<div id="tableWrap">
+    <div id="tableToolbar">
+        <input id="searchInput" type="text" placeholder="Search pair…" oninput="applyFilters()">
+        <button class="filter-btn on" id="fAll"   onclick="setFilter('all')">ALL</button>
+        <button class="filter-btn"    id="fLong"  onclick="setFilter('long')">LONG</button>
+        <button class="filter-btn"    id="fShort" onclick="setFilter('short')">SHORT</button>
+        <button class="filter-btn"    id="fProfit" onclick="setFilter('profit')">🟢 PROFIT</button>
+        <button class="filter-btn"    id="fLoss"   onclick="setFilter('loss')">🔴 LOSS</button>
+    </div>
+    <div class="tbl-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th onclick="sortBy('pair')">Pair <span class="sort-arrow">↕</span></th>
+                    <th onclick="sortBy('side')">Side <span class="sort-arrow">↕</span></th>
+                    <th onclick="sortBy('open')">Entry <span class="sort-arrow">↕</span></th>
+                    <th onclick="sortBy('current')">Current <span class="sort-arrow">↕</span></th>
+                    <th onclick="sortBy('profit_pct')">P&L % <span class="sort-arrow">↕</span></th>
+                    <th onclick="sortBy('max')">Max Δ% <span class="sort-arrow">↕</span></th>
+                    <th onclick="sortBy('min')">Min Δ% <span class="sort-arrow">↕</span></th>
+                    <th onclick="sortBy('rr')">Risk/Rew <span class="sort-arrow">↕</span></th>
+                    <th onclick="sortBy('dist')">Dist to Max <span class="sort-arrow">↕</span></th>
+                    <th>Trend</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
 </div>
 
-<div id="cardsContainer" style="display:none; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;"></div>
+<!-- CARDS VIEW -->
+<div id="cardsGrid"></div>
 
-<div id="footer-bar">
-    <span id="syncText">LAST SYNC: N/A</span>
-    <div id="syncSpinner" class="sync-icon"></div>
-    <button class="btn" onclick="sync()" style="background: var(--primary); color: white; border:none;">🔄 REFRESH</button>
+<!-- FOOTER -->
+<div id="footer">
+    <div style="display:flex;align-items:center;gap:8px;">
+        <span class="spinner" id="spinner"></span>
+        <span id="syncText">AWAITING SYNC…</span>
+    </div>
+    <div id="footerRight" style="color:var(--muted2);">TRADE MATRIX PRO</div>
 </div>
 
-<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+</div><!-- /app -->
+<div id="toast"></div>
 
+<script src="https://s3.tradingview.com/tv.js" async></script>
 <script>
-// PWA Service Worker Registration
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js').catch(() => {});
-    });
-}
-
+// ─── CONFIG ─────────────────────────────────────────────────────────────
 const JSON_URL = "https://justforfunssn-default-rtdb.europe-west1.firebasedatabase.app/webAppref.json";
-let allData = {}, currentKey = "", alertsEnabled = false, notified = new Set();
-let audioCtx = null, refreshInterval = null;
+const REFRESH_KEY = 'tm_refresh';
+const THEME_KEY   = 'tm_theme';
 
-document.body.addEventListener('mousedown', () => {
+// ─── STATE ───────────────────────────────────────────────────────────────
+let allData       = {};
+let currentKey    = "";
+let alertsEnabled = false;
+let notified      = new Set();
+let audioCtx      = null;
+let refreshTimer  = null;
+let sortCol       = 'profit_pct';
+let sortAsc       = false;
+let filterMode    = 'all';
+let currentView   = 'table';
+let prevData      = {}; // for delta detection
+
+// ─── AUDIO ───────────────────────────────────────────────────────────────
+document.body.addEventListener('pointerdown', () => {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
 }, { once: true });
 
-function playStrongAlert() {
+// ── ALERT SOUND ──────────────────────────────────────────────────────────
+function ensureAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playAlert(type = 'profit') {
+    ensureAudio();
     if (!audioCtx || audioCtx.state !== 'running') return;
-    const now = audioCtx.currentTime;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(850, now);
-    osc.frequency.exponentialRampToValueAtTime(1250, now + 1);
-    gain.gain.setValueAtTime(0.4, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 1);
-    osc.connect(gain); gain.connect(audioCtx.destination);
-    osc.start(); osc.stop(now + 1);
+    const ctx  = audioCtx;
+    const dest = ctx.destination;
+
+    // Compressor keeps it loud without distorting
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -6;
+    comp.knee.value      = 3;
+    comp.ratio.value     = 4;
+    comp.attack.value    = 0.001;
+    comp.release.value   = 0.1;
+    comp.connect(dest);
+
+    function tone(freq, type, start, dur, peak) {
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+        gain.gain.setValueAtTime(0.001, ctx.currentTime + start);
+        gain.gain.linearRampToValueAtTime(peak, ctx.currentTime + start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+        osc.connect(gain); gain.connect(comp);
+        osc.start(ctx.currentTime + start);
+        osc.stop(ctx.currentTime + start + dur + 0.02);
+    }
+
+    if (type === 'profit') {
+        // Original ascending 3-beep — sine, just much louder + sub thump
+        tone(880,  'sine', 0,    0.18, 0.85);
+        tone(1100, 'sine', 0.20, 0.18, 0.85);
+        tone(1320, 'sine', 0.40, 0.28, 0.95);
+        // Sub punch under each beep for body
+        tone(90, 'sine', 0,    0.10, 0.7);
+        tone(90, 'sine', 0.20, 0.10, 0.7);
+        tone(90, 'sine', 0.40, 0.10, 0.7);
+    } else {
+        // Original descending sawtooth — same shape, louder
+        tone(850,  'sawtooth', 0,    0.35, 0.75);
+        tone(850,  'sawtooth', 0,    0.35, 0.4); // doubled for volume
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(850, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 1.0);
+        gain.gain.setValueAtTime(0.8, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.0);
+        osc.connect(gain); gain.connect(comp);
+        osc.start(); osc.stop(ctx.currentTime + 1.0);
+        // Sub thump
+        tone(70, 'sine', 0, 0.15, 0.8);
+    }
 }
 
-// RESTORED: Chart Opener
-function openChart(pair) {
-    document.getElementById('chartSection').style.display = 'block';
-    const symbol = pair.replace(/[\/:\s\.]/g, '').replace('USDTUSDT', 'USDT');
-    new TradingView.widget({
-        "autosize": true, "symbol": "BINANCE:" + symbol + ".P", "interval": "15",
-        "theme": document.body.classList.contains('dark-theme') ? "dark" : "light",
-        "style": "1", "container_id": "tv_chart_container"
-    });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+// No-op stubs so checkAlerts calls still work
+function startRepeatingAlert(type) { playAlert(type); }
+function stopRepeatingAlert() {}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
 }
 
-function renderMaxMin(pct, price, isHighlight) {
-    const color = isHighlight ? 'var(--green)' : 'var(--red)';
-    return `<div style="display:flex; flex-direction:column; align-items: flex-start;">
-                <span style="color:${color}; font-weight:800;">${parseFloat(pct || 0).toFixed(2)}%</span>
-                <span class="monospace" style="opacity:0.6; font-size:10px; margin-top:2px;">${parseFloat(price || 0).toFixed(5)}</span>
-            </div>`;
+// ─── THEME ───────────────────────────────────────────────────────────────
+function toggleTheme() {
+    const isLight = document.body.classList.toggle('light');
+    document.getElementById('themeBtn').textContent = isLight ? '☀️' : '🌙';
+    localStorage.setItem(THEME_KEY, isLight ? 'light' : 'dark');
 }
+(function initTheme() {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === 'light') {
+        document.body.classList.add('light');
+        document.getElementById('themeBtn').textContent = '☀️';
+    }
+})();
 
+// ─── ALERTS ──────────────────────────────────────────────────────────────
 function toggleAlerts() {
     alertsEnabled = !alertsEnabled;
-    const btn = document.getElementById('alertToggle');
-    btn.classList.toggle('active', alertsEnabled);
-    btn.innerHTML = alertsEnabled ? "🔔 ALERTS ON" : "🔕 ALERTS OFF";
+    const btn = document.getElementById('alertBtn');
+    btn.classList.toggle('on', alertsEnabled);
+    btn.textContent = alertsEnabled ? '🔔' : '🔕';
+    showToast(alertsEnabled ? '🔔 Alerts enabled' : '🔕 Alerts disabled');
 }
 
-async function sync() {
-    document.getElementById('syncSpinner').classList.add('active');
-    try {
-        const r = await fetch(JSON_URL);
-        allData = await r.json();
-        const keys = Object.keys(allData);
-        if (!currentKey && keys.length > 0) currentKey = keys[0];
-        document.getElementById('syncText').textContent = `LAST SYNC: ${new Date().toLocaleTimeString()}`;
-        renderUI(false); 
-    } catch (e) { console.error(e); }
-    setTimeout(() => document.getElementById('syncSpinner').classList.remove('active'), 500);
+// ─── REFRESH ─────────────────────────────────────────────────────────────
+function setRefresh(sec) {
+    clearInterval(refreshTimer);
+    const s = parseInt(sec);
+    if (s > 0) refreshTimer = setInterval(sync, s * 1000);
+    localStorage.setItem(REFRESH_KEY, sec);
+}
+(function initRefresh() {
+    const saved = localStorage.getItem(REFRESH_KEY) || '0';
+    const sel   = document.getElementById('refreshSelect');
+    sel.value   = saved;
+    setRefresh(saved);
+})();
+
+// ─── VIEW SWITCH ─────────────────────────────────────────────────────────
+function switchView(v) {
+    currentView = v;
+    document.getElementById('tableWrap').style.display  = v === 'table' ? 'block' : 'none';
+    document.getElementById('cardsGrid').style.display  = v === 'cards' ? 'grid'  : 'none';
+    document.getElementById('tblBtn').classList.toggle('active', v === 'table');
+    document.getElementById('crdBtn').classList.toggle('active', v === 'cards');
 }
 
-function checkAlarms(trades, forceSound) {
-    if (!alertsEnabled) return;
-    let alarmNow = false;
-    trades.forEach(t => {
-        const id = `${currentKey}-${t.pair}`;
-        const isTrigger = (t.profit_pct >= 1.0 || t.profit_pct <= -5.0);
-        if (isTrigger) {
-            if (forceSound || !notified.has(id)) alarmNow = true;
-            notified.add(id);
-        } else {
-            notified.delete(id);
-        }
+// ─── SORT ─────────────────────────────────────────────────────────────────
+function sortBy(col) {
+    if (sortCol === col) sortAsc = !sortAsc;
+    else { sortCol = col; sortAsc = false; }
+    document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
+    const idx = ['pair','side','open','current','profit_pct','max','min','rr','dist','trend'].indexOf(col);
+    if (idx >= 0) document.querySelectorAll('thead th')[idx]?.classList.add('sorted');
+    renderTable(getSortedFiltered());
+}
+
+function getSortedFiltered() {
+    let trades = [...(allData[currentKey] || [])];
+
+    // filter
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    if (q) trades = trades.filter(t => t.pair.toLowerCase().includes(q));
+    if (filterMode === 'long')   trades = trades.filter(t => !t.is_short);
+    if (filterMode === 'short')  trades = trades.filter(t => t.is_short);
+    if (filterMode === 'profit') trades = trades.filter(t => t.profit_pct > 0);
+    if (filterMode === 'loss')   trades = trades.filter(t => t.profit_pct <= 0);
+
+    // sort
+    trades.sort((a, b) => {
+        let va, vb;
+        if (sortCol === 'pair')       { va = a.pair;        vb = b.pair; }
+        else if (sortCol === 'side')  { va = a.is_short?1:0; vb = b.is_short?1:0; }
+        else if (sortCol === 'open')  { va = a.open;        vb = b.open; }
+        else if (sortCol === 'current'){va = a.current;     vb = b.current; }
+        else if (sortCol === 'profit_pct') { va = a.profit_pct; vb = b.profit_pct; }
+        else if (sortCol === 'max')   { va = a.max?.delta_pct||0; vb = b.max?.delta_pct||0; }
+        else if (sortCol === 'min')   { va = a.min?.delta_pct||0; vb = b.min?.delta_pct||0; }
+        else if (sortCol === 'rr')    { va = getRR(a);      vb = getRR(b); }
+        else if (sortCol === 'dist')  { va = getDist(a);    vb = getDist(b); }
+        else { va = 0; vb = 0; }
+        if (typeof va === 'string') return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+        return sortAsc ? va - vb : vb - va;
     });
-    if (alarmNow) playStrongAlert();
+    return trades;
+}
+
+// ─── FILTER ──────────────────────────────────────────────────────────────
+function setFilter(mode) {
+    filterMode = mode;
+    ['fAll','fLong','fShort','fProfit','fLoss'].forEach(id => document.getElementById(id)?.classList.remove('on'));
+    const map = { all:'fAll', long:'fLong', short:'fShort', profit:'fProfit', loss:'fLoss' };
+    document.getElementById(map[mode])?.classList.add('on');
+    applyFilters();
+}
+function applyFilters() { renderTable(getSortedFiltered()); }
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────
+function getRR(t) {
+    const maxD = Math.abs(t.max?.delta_pct || 0);
+    const minD = Math.abs(t.min?.delta_pct || 0);
+    if (minD === 0) return 0;
+    return maxD / minD;
+}
+function getDist(t) {
+    // distance from current to max (potential left), as pct
+    const maxP = t.max?.price;
+    if (!maxP || !t.current) return 0;
+    return ((maxP - t.current) / t.current * 100);
+}
+function fmt(n, d=5) { return parseFloat(n||0).toFixed(d); }
+function fmtPct(n)   { return (n>=0?'+':'')+parseFloat(n||0).toFixed(2)+'%'; }
+
+// mini sparkline SVG (simulated from max/min/current)
+function sparkline(t) {
+    const vals = [
+        t.open,
+        t.is_short ? t.max?.price||t.open : t.min?.price||t.open,
+        t.is_short ? t.min?.price||t.current : t.max?.price||t.current,
+        t.current
+    ].map(v => parseFloat(v||0));
+    const mn = Math.min(...vals), mx = Math.max(...vals), rng = mx-mn||1;
+    const pts = vals.map((v,i) => `${i*(36/3)},${18-((v-mn)/rng*16)}`).join(' ');
+    const col = t.profit_pct >= 0 ? 'var(--green2)' : 'var(--red2)';
+    return `<svg class="sparkline" width="40" height="20" viewBox="0 0 40 20">
+        <polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>`;
+}
+
+// ─── RENDER TABLE ────────────────────────────────────────────────────────
+function renderTable(trades) {
+    document.getElementById('tableBody').innerHTML = trades.map(t => {
+        const isS    = t.is_short;
+        const pPos   = t.profit_pct >= 0;
+        const rr     = getRR(t);
+        const rrFill = Math.min(rr / 5 * 100, 100);
+        const rrCol  = rr >= 2 ? 'var(--green2)' : rr >= 1 ? 'var(--yellow)' : 'var(--red2)';
+        const dist   = getDist(t);
+        const rowCls = t.profit_pct >= 1 ? 'tr-profit' : t.profit_pct <= -5 ? 'tr-loss' : '';
+        const isNew  = prevData[currentKey] && !prevData[currentKey]?.find(x=>x.pair===t.pair);
+
+        return `<tr class="${rowCls}${isNew?' row-new':''}">
+            <td><span class="pair-link" onclick="openChart('${t.pair}')">${t.pair}</span></td>
+            <td><span class="side-badge ${isS?'s':'l'}">${isS?'S':'L'}</span></td>
+            <td class="mono" style="font-size:12px;">${fmt(t.open)}</td>
+            <td class="mono" style="font-size:12px;font-weight:700;">${fmt(t.current)}</td>
+            <td><span class="pct-val ${pPos?'pct-pos':'pct-neg'}">${fmtPct(t.profit_pct)}</span></td>
+            <td><div class="delta-cell">
+                <span class="delta-main" style="color:${!isS?'var(--green2)':'var(--red2)'};">${fmtPct(t.max?.delta_pct||0)}</span>
+                <span class="delta-sub">${fmt(t.max?.price||0,5)}</span>
+            </div></td>
+            <td><div class="delta-cell">
+                <span class="delta-main" style="color:${isS?'var(--green2)':'var(--red2)'};">${fmtPct(t.min?.delta_pct||0)}</span>
+                <span class="delta-sub">${fmt(t.min?.price||0,5)}</span>
+            </div></td>
+            <td><div class="rr-bar-wrap">
+                <div class="rr-bar"><div class="rr-bar-fill" style="width:${rrFill}%;background:${rrCol};"></div></div>
+                <span class="rr-val" style="color:${rrCol};">${rr.toFixed(1)}x</span>
+            </div></td>
+            <td><span class="dist-cell">${dist>=0?'+':''}${dist.toFixed(2)}%</span></td>
+            <td>${sparkline(t)}</td>
+        </tr>`;
+    }).join('') || `<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--muted);">No trades match the current filter.</td></tr>`;
+}
+
+// ─── RENDER CARDS ────────────────────────────────────────────────────────
+function renderCards(trades) {
+    document.getElementById('cardsGrid').innerHTML = trades.map(t => {
+        const isS  = t.is_short;
+        const pPos = t.profit_pct >= 0;
+        const rr   = getRR(t);
+        return `<div class="trade-card ${pPos?'card-pos':'card-neg'}">
+            <div class="card-top">
+                <span class="pair-link" onclick="openChart('${t.pair}')">${t.pair}</span>
+                <span class="side-badge ${isS?'s':'l'}">${isS?'S':'L'}</span>
+            </div>
+            <div class="card-pct ${pPos?'pct-pos':'pct-neg'}">${fmtPct(t.profit_pct)}</div>
+            <div class="card-row"><span class="card-label">Entry</span><span class="card-val">${fmt(t.open)}</span></div>
+            <div class="card-row"><span class="card-label">Current</span><span class="card-val" style="font-weight:700;">${fmt(t.current)}</span></div>
+            <div class="card-row"><span class="card-label">Max Δ</span><span class="card-val" style="color:${!isS?'var(--green2)':'var(--red2)'};">${fmtPct(t.max?.delta_pct||0)}</span></div>
+            <div class="card-row"><span class="card-label">Min Δ</span><span class="card-val" style="color:${isS?'var(--green2)':'var(--red2)'};">${fmtPct(t.min?.delta_pct||0)}</span></div>
+            <div class="card-row"><span class="card-label">R/R</span><span class="card-val" style="color:${rr>=2?'var(--green2)':rr>=1?'var(--yellow)':'var(--red2)'};">${rr.toFixed(2)}x</span></div>
+            <div class="card-row" style="border:none;padding-top:8px;">${sparkline(t)}</div>
+        </div>`;
+    }).join('') || `<p style="text-align:center;color:var(--muted);padding:40px 0;">No trades match the current filter.</p>`;
+}
+
+// ─── STRATEGY TABS ────────────────────────────────────────────────────────
+function renderStratTabs() {
+    const keys = Object.keys(allData);
+    document.getElementById('radioGroup').innerHTML = keys.map(k => {
+        const trades  = allData[k] || [];
+        const total   = trades.reduce((a,t) => a+(t.profit_pct||0), 0);
+        const hasAlert= trades.some(t => t.profit_pct>=1||t.profit_pct<=-5);
+        const pos     = total >= 0;
+        return `<div class="strat-tab ${pos?'pos':'neg'} ${currentKey===k?'active':''}" onclick="switchStrat('${k}')">
+            <div class="alert-dot" style="display:${hasAlert?'block':'none'}"></div>
+            <div class="t-pct">${total>=0?'+':''}${total.toFixed(2)}%</div>
+            <div class="t-name">${k}</div>
+        </div>`;
+    }).join('');
 }
 
 function switchStrat(k) {
     currentKey = k;
-    renderUI(true); 
+    notified.clear();
+    renderAll(false);
 }
 
-function renderUI(isManual) {
-    const keys = Object.keys(allData);
-    document.getElementById("radioGroup").innerHTML = keys.map(k => {
-        const trades = allData[k] || [];
-        const profit = trades.reduce((a, t) => a + (t.profit_pct || 0), 0);
-        const alert = trades.some(t => t.profit_pct >= 1.0 || t.profit_pct <= -5.0);
-        return `<div class="radio-option ${currentKey === k ? 'active' : ''} ${profit >= 0 ? 'strat-pos' : 'strat-neg'}" onclick="switchStrat('${k}')">
-            <div class="alert-dot" style="display: ${alert ? 'block' : 'none'}"></div>
-            <div style="font-size:14px; font-weight:900;">${profit.toFixed(2)}%</div>
-            <div style="font-size:10px; font-weight:700;">${k}</div>
-        </div>`;
-    }).join('');
+// ─── SUMMARY STRIP ────────────────────────────────────────────────────────
+function renderSummary(trades) {
+    const total  = trades.reduce((a,t) => a+(t.profit_pct||0), 0);
+    const wins   = trades.filter(t => t.profit_pct > 0);
+    const losses = trades.filter(t => t.profit_pct <= 0);
+    const best   = trades.reduce((a,t) => t.profit_pct>a.profit_pct?t:a, trades[0]||{profit_pct:0,pair:'—'});
+    const worst  = trades.reduce((a,t) => t.profit_pct<a.profit_pct?t:a, trades[0]||{profit_pct:0,pair:'—'});
+    const avg    = trades.length ? total / trades.length : 0;
+    const wr     = trades.length ? (wins.length/trades.length*100) : 0;
 
+    const totalPos = total >= 0;
+    document.getElementById('sTotalPnl').textContent    = fmtPct(total);
+    document.getElementById('sTotalPnl').className      = 'sc-val ' + (totalPos?'sc-green':'sc-red');
+    document.getElementById('sTotalPnlSub').textContent = `${trades.length} strategies loaded`;
+    document.getElementById('sCount').textContent       = trades.length;
+    document.getElementById('sCountSub').textContent    = `${wins.length} long / ${losses.length} short net`;
+    document.getElementById('sWinRate').textContent     = wr.toFixed(0)+'%';
+    document.getElementById('sWinRateSub').textContent  = `${wins.length} W / ${losses.length} L`;
+    document.getElementById('sBest').textContent        = fmtPct(best.profit_pct||0);
+    document.getElementById('sBestSub').textContent     = best.pair||'—';
+    document.getElementById('sWorst').textContent       = fmtPct(worst.profit_pct||0);
+    document.getElementById('sWorstSub').textContent    = worst.pair||'—';
+    document.getElementById('sAvg').textContent         = fmtPct(avg);
+
+    // global header pills
+    const allTrades = Object.values(allData).flat();
+    document.getElementById('gTotal').textContent = `${allTrades.length} TRADES`;
+    document.getElementById('gWin').textContent   = `${allTrades.filter(t=>t.profit_pct>0).length} W`;
+    document.getElementById('gLoss').textContent  = `${allTrades.filter(t=>t.profit_pct<=0).length} L`;
+}
+
+// ─── ALERTS ──────────────────────────────────────────────────────────────
+function checkAlerts(trades, isManual) {
+    if (!alertsEnabled) return;
+    let anyActive = false;
+    trades.forEach(t => {
+        const id = `${currentKey}-${t.pair}`;
+        if (t.profit_pct >= 1.0) {
+            anyActive = true;
+            if (!notified.has(id+'-profit')) {
+                startRepeatingAlert('profit');
+                showToast(`🟢 ${t.pair} hit +${t.profit_pct.toFixed(2)}%!`);
+                notified.add(id+'-profit');
+            }
+        } else { notified.delete(id+'-profit'); }
+        if (t.profit_pct <= -5.0) {
+            anyActive = true;
+            if (!notified.has(id+'-loss')) {
+                startRepeatingAlert('loss');
+                showToast(`🔴 ${t.pair} dropped ${t.profit_pct.toFixed(2)}%!`);
+                notified.add(id+'-loss');
+            }
+        } else { notified.delete(id+'-loss'); }
+    });
+    if (!anyActive) stopRepeatingAlert();
+}
+
+// ─── BINANCE KLINE LOOKUP ─────────────────────────────────────────────────
+// Given a symbol + open_date + max_price, find the candle that hit max_price
+// Uses /api/v3/klines on the futures endpoint (fapi) for perpetuals
+async function findMaxPriceTime(symbol, openDateStr, maxPrice, isShort) {
+    try {
+        // Parse open_date: '2026-03-23 02:30:12.624036'
+        const openTs = new Date(openDateStr.replace(' ', 'T')).getTime();
+        if (isNaN(openTs)) return null;
+
+        // Binance futures symbol: strip /: etc
+        const bSymbol = symbol.replace(/[\/:\s\.]/g,'').replace('USDTUSDT','USDT').toUpperCase();
+
+        // Fetch 15m klines from open_date to now (max 500 candles ≈ 5 days)
+        const endTs  = Date.now();
+        const url    = `https://fapi.binance.com/fapi/v1/klines?symbol=${bSymbol}&interval=15m&startTime=${openTs}&endTime=${endTs}&limit=500`;
+        const r      = await fetch(url);
+        if (!r.ok) throw new Error('Binance HTTP ' + r.status);
+        const klines = await r.json();
+        // kline format: [openTime, open, high, low, close, ...]
+        const target = parseFloat(maxPrice);
+        let best = null, bestDiff = Infinity;
+        for (const k of klines) {
+            const high  = parseFloat(k[2]);
+            const low   = parseFloat(k[3]);
+            const check = isShort ? low : high;
+            const diff  = Math.abs(check - target);
+            if (diff < bestDiff) { bestDiff = diff; best = k; }
+        }
+        if (!best) return null;
+        return new Date(best[0]).toLocaleString();
+    } catch(e) {
+        console.warn('Binance lookup failed:', e);
+        return null;
+    }
+}
+
+// ─── CHART ───────────────────────────────────────────────────────────────
+async function openChart(pair) {
+    // Find the trade object
     const trades = allData[currentKey] || [];
-    checkAlarms(trades, isManual);
+    const t = trades.find(x => x.pair === pair);
 
-    document.getElementById("tableBody").innerHTML = trades.map(t => {
-        const isS = t.is_short, rowCls = t.profit_pct >= 1.0 ? 'row-profit' : (t.profit_pct <= -5.0 ? 'row-loss' : '');
-        return `<tr class="${rowCls}">
-            <td><span class="pair-name" onclick="openChart('${t.pair}')">${t.pair}</span></td>
-            <td><span class="side-icon ${isS ? 's' : 'l'}">${isS ? 'S' : 'L'}</span></td>
-            <td class="monospace">${t.open.toFixed(5)}</td>
-            <td class="monospace" style="font-weight:700;">${t.current.toFixed(5)}</td>
-            <td style="font-weight:900; color:${t.profit_pct >= 0 ? 'var(--green)' : 'var(--red)'}">${t.profit_pct.toFixed(2)}%</td>
-            <td>${renderMaxMin(t.max?.delta_pct, t.max?.price, !isS)}</td>
-            <td>${renderMaxMin(t.min?.delta_pct, t.min?.price, isS)}</td>
-        </tr>`;
-    }).join('');
+    // Show section immediately
+    document.getElementById('chartSection').style.display = 'block';
+    document.getElementById('tv_chart_container').innerHTML = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    document.getElementById("cardsContainer").innerHTML = trades.map(t => {
-        const isS = t.is_short, cardCls = t.profit_pct <= -5.0 ? 'row-loss' : '';
-        const pCol = t.profit_pct >= 0 ? 'var(--green)' : 'var(--red)';
-        return `<div class="card ${cardCls}">
-            <div class="card-row">
-                <span class="pair-name" onclick="openChart('${t.pair}')" style="font-weight:900;">${t.pair}</span>
-                <span class="side-icon ${isS ? 's' : 'l'}">${isS ? 'S' : 'L'}</span>
-            </div>
-            <div class="card-row" style="font-size: 20px; font-weight:900; color:${pCol}; border-bottom:1px solid var(--border); padding: 5px 0;">${t.profit_pct.toFixed(2)}%</div>
-            <div class="card-row"><span class="label">Entry:</span> <span class="monospace">${t.open.toFixed(5)}</span></div>
-            <div class="card-row"><span class="label">Current:</span> <span class="monospace" style="font-weight:700;">${t.current.toFixed(5)}</span></div>
-            <div class="card-row" style="margin-top:5px;"><span class="label">Max:</span> ${renderMaxMin(t.max?.delta_pct, t.max?.price, !isS)}</div>
-            <div class="card-row"><span class="label">Min:</span> ${renderMaxMin(t.min?.delta_pct, t.min?.price, isS)}</div>
-        </div>`;
-    }).join('');
+    // Populate info overlay
+    if (t) {
+        const isS    = t.is_short;
+        const pPos   = t.profit_pct >= 0;
+        const info   = document.getElementById('chartInfo');
+        info.style.display = 'block';
+        document.getElementById('chartInfoTitle').textContent = pair;
+        document.getElementById('ci-side').innerHTML    = `<span class="side-badge ${isS?'s':'l'}" style="display:inline-flex;">${isS?'SHORT':'LONG'}</span>`;
+        document.getElementById('ci-entry').textContent  = fmt(t.open, 5);
+        // Parse open_date if present
+        const od = t.open_date || t.open_time || null;
+        document.getElementById('ci-etime').textContent  = od ? new Date(od.replace(' ','T')).toLocaleString() : '—';
+        document.getElementById('ci-current').textContent = fmt(t.current, 5);
+        const pnlEl = document.getElementById('ci-pnl');
+        pnlEl.textContent  = fmtPct(t.profit_pct);
+        pnlEl.style.color  = pPos ? 'var(--green2)' : 'var(--red2)';
+        document.getElementById('ci-maxprice').textContent = fmt(t.max?.price||0, 5);
+        const maxDEl = document.getElementById('ci-maxdelta');
+        maxDEl.textContent = fmtPct(t.max?.delta_pct||0);
+        maxDEl.style.color = !isS ? 'var(--green2)' : 'var(--red2)';
+        document.getElementById('ci-maxtime').innerHTML = '<span class="ci-loading">fetching…</span>';
+
+        // Async Binance lookup for max-price timestamp
+        if (t.max?.price && od) {
+            findMaxPriceTime(pair, od, t.max.price, isS).then(ts => {
+                document.getElementById('ci-maxtime').textContent = ts || 'not found';
+            });
+        } else {
+            document.getElementById('ci-maxtime').textContent = 'no data';
+        }
+    } else {
+        document.getElementById('chartInfo').style.display = 'none';
+    }
+
+    // Load TradingView widget
+    const symbol = pair.replace(/[\/:\s\.]/g,'').replace('USDTUSDT','USDT');
+    const isDark = !document.body.classList.contains('light');
+
+    if (window.TradingView) {
+        new TradingView.widget({
+            autosize: true,
+            symbol: "BINANCE:" + symbol + ".P",
+            interval: "15",
+            theme: isDark ? "dark" : "light",
+            style: "1",
+            container_id: "tv_chart_container",
+            hide_side_toolbar: false,
+            allow_symbol_change: true,
+            save_image: false,
+            // Show entry price as a horizontal line via studies override
+            // TradingView lightweight doesn't support programmatic lines on the widget version,
+            // so we overlay it visually in #chartInfo instead.
+        });
+    }
 }
 
-document.getElementById("tableBtn").onclick = () => { document.getElementById("tableContainer").style.display="block"; document.getElementById("cardsContainer").style.display="none"; document.getElementById("tableBtn").classList.add("active"); document.getElementById("cardBtn").classList.remove("active"); };
-document.getElementById("cardBtn").onclick = () => { document.getElementById("tableContainer").style.display="none"; document.getElementById("cardsContainer").style.display="grid"; document.getElementById("cardBtn").classList.add("active"); document.getElementById("tableBtn").classList.remove("active"); };
+function closeChart() {
+    document.getElementById('chartSection').style.display = 'none';
+    document.getElementById('tv_chart_container').innerHTML = '';
+    document.getElementById('chartInfo').style.display = 'none';
+}
 
-document.getElementById("refreshSelect").onchange = (e) => {
-    if (refreshInterval) clearInterval(refreshInterval);
-    const sec = parseInt(e.target.value);
-    if (sec > 0) refreshInterval = setInterval(sync, sec * 1000);
-};
+// ─── MAIN RENDER ─────────────────────────────────────────────────────────
+function renderAll(isManual) {
+    renderStratTabs();
+    const trades = allData[currentKey] || [];
+    renderSummary(trades);
+    checkAlerts(trades, isManual);
+    const filtered = getSortedFiltered();
+    renderTable(filtered);
+    renderCards(filtered);
+}
 
+// ─── SYNC ────────────────────────────────────────────────────────────────
+async function sync() {
+    document.getElementById('spinner').classList.add('on');
+    try {
+        const r = await fetch(JSON_URL + '?nocache=' + Date.now());
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        prevData = JSON.parse(JSON.stringify(allData)); // snapshot
+        allData  = await r.json();
+        const keys = Object.keys(allData);
+        if (!currentKey && keys.length) currentKey = keys[0];
+        const now = new Date().toLocaleTimeString();
+        document.getElementById('syncText').textContent = `SYNCED ${now}`;
+        renderAll(false);
+    } catch(e) {
+        console.error(e);
+        document.getElementById('syncText').textContent = `SYNC ERROR — ${new Date().toLocaleTimeString()}`;
+        showToast('⚠️ Sync failed — check connection');
+    }
+    setTimeout(() => document.getElementById('spinner').classList.remove('on'), 400);
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
 sync();
 </script>
 </body>
