@@ -3,285 +3,287 @@
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Trade Matrix | Live Dashboard</title>
+    <title>Trade Matrix Pro</title>
+    
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#2563eb">
-    <link rel="apple-touch-icon" href="logo.png">
-    <link rel="icon" type="image/png" href="logo.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --bg-color: #f0f4f8; --surface: #ffffff; --primary: #2563eb;
+            --bg-color: #f4f7f9; --surface: #ffffff; --primary: #2563eb;
             --text-main: #0f172a; --text-muted: #64748b; --border: #e2e8f0;
-            --green: #10b981; --green-bg: #d1fae5; --red: #ef4444;
-            --radius: 12px; --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            --green: #059669; --green-bg: #d1fae5; --red: #dc2626; --red-bg: #fee2e2;
+            --radius: 16px; --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
+
+        body.dark-theme {
+            --bg-color: #0b0f19; --surface: #151e2e; --primary: #3b82f6;
+            --text-main: #f8fafc; --text-muted: #94a3b8; --border: #1e293b;
+            --green: #10b981; --green-bg: rgba(16, 185, 129, 0.15);
+            --red: #ef4444; --red-bg: rgba(239, 68, 68, 0.15);
+        }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg-color); color: var(--text-main); padding: 15px; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-color); color: var(--text-main); padding: 20px; -webkit-font-smoothing: antialiased; }
 
-        /* Mobile Landscape Warning */
-        @media screen and (max-width: 900px) and (orientation: portrait) {
-            body::before {
-                content: "Please rotate your device to Landscape 🔄";
-                position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-                background: var(--primary); color: white; z-index: 9999;
-                display: flex; align-items: center; justify-content: center;
-                text-align: center; padding: 30px; font-weight: bold; font-size: 1.2rem;
-            }
-        }
-
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        h1 { font-size: 1.4rem; font-weight: 800; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        h1 { font-size: 1.6rem; font-weight: 900; background: linear-gradient(135deg, var(--primary), #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
         #controls {
-            display: flex; flex-wrap: wrap; gap: 15px; background: var(--surface);
-            padding: 15px; border-radius: var(--radius); box-shadow: var(--shadow);
-            margin-bottom: 20px; border: 1px solid var(--border);
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;
+            background: var(--surface); padding: 20px; border-radius: var(--radius);
+            border: 1px solid var(--border); box-shadow: var(--shadow-md); margin-bottom: 25px;
         }
-        .control-group { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 140px; }
-        .control-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
 
-        .btn-group { display: flex; background: var(--bg-color); border-radius: 8px; padding: 3px; }
-        .btn-group button {
-            flex: 1; border: none; background: transparent; padding: 8px; border-radius: 6px;
-            font-size: 12px; font-weight: 600; cursor: pointer; color: var(--text-muted);
-        }
-        .btn-group button.active { background: var(--surface); color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        select { padding: 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-color); font-size: 13px; }
-
-        #radioGroup { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+        #radioGroup { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
         .radio-option {
-            display: flex; flex-direction: column; align-items: center; min-width: 100px;
-            background: var(--bg-color); border: 1px solid var(--border); padding: 8px;
-            border-radius: 10px; cursor: pointer; flex-shrink: 0; transition: 0.2s;
+            min-width: 140px; background: var(--bg-color); border: 2px solid transparent;
+            padding: 14px; border-radius: 12px; cursor: pointer; transition: 0.2s;
         }
-        .radio-option.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .radio-option.active { border-color: var(--primary); background: var(--surface); box-shadow: var(--shadow-md); }
+        .strat-profit { font-size: 17px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+        .strat-label { font-size: 10px; font-weight: 700; text-transform: uppercase; margin-top: 4px; color: var(--text-muted); }
 
-        /* TABLE STYLING */
-        #tableContainer { background: var(--surface); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); border: 1px solid var(--border); }
-        table { width: 100%; border-collapse: collapse; min-width: 650px; }
-        th, td { padding: 14px; border-bottom: 1px solid var(--border); text-align: left; font-size: 13px; }
-        th { background: #f8fafc; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-
-        /* ENTIRE ROW GLOW */
-        .row-glow { animation: bgPulse 1.5s infinite; }
-        @keyframes bgPulse {
-            0% { background-color: var(--surface); }
-            50% { background-color: #dcfce7; } /* Soft Green */
-            100% { background-color: var(--surface); }
+        #chartSection {
+            display: none; position: relative; margin-bottom: 25px; 
+            background: var(--surface); border-radius: var(--radius); overflow: hidden; 
+            height: 550px; border: 1px solid var(--border);
+        }
+        #closeChart {
+            position: absolute; top: 12px; right: 12px; z-index: 10;
+            background: var(--red); color: white; border: none; padding: 6px 14px;
+            border-radius: 20px; cursor: pointer; font-size: 11px; font-weight: 700;
         }
 
-        /* CARD GLOW */
-        .card { background: var(--surface); border-radius: var(--radius); padding: 15px; margin-bottom: 10px; box-shadow: var(--shadow); border: 1px solid var(--border); transition: 0.3s; }
-        .card.glow-active { border-color: var(--green); animation: cardPulse 1.5s infinite; }
-        @keyframes cardPulse {
-            0% { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
-            50% { box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); background-color: #f0fdf4; }
-            100% { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
-        }
+        #tableContainer { background: var(--surface); border-radius: var(--radius); overflow-x: auto; border: 1px solid var(--border); box-shadow: var(--shadow-md); }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th { background: var(--bg-color); padding: 14px 18px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; text-align: right; border-bottom: 1px solid var(--border); }
+        th:first-child, td:first-child { text-align: left; }
+        td { padding: 14px 18px; border-bottom: 1px solid var(--border); font-size: 14px; text-align: right; }
+        
+        .row-glow { animation: rowPulse 1s infinite; border-left: 4px solid var(--green); }
+        @keyframes rowPulse { 50% { background-color: var(--green-bg); } }
 
+        .pair-link { color: var(--primary); cursor: pointer; font-weight: 800; text-decoration: underline; }
         .side-badge { padding: 3px 8px; border-radius: 5px; font-size: 10px; font-weight: 800; }
-        .side-badge.long { background: #e0f2fe; color: #0369a1; }
-        .side-badge.short { background: #fdf2f8; color: #9d174d; }
+        .side-badge.long { background: var(--green-bg); color: var(--green); }
+        .side-badge.short { background: var(--red-bg); color: var(--red); }
 
-        .val-green { color: var(--green); font-weight: 700; }
-        .val-red { color: var(--red); font-weight: 700; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .val-green { color: var(--green); }
+        .val-red { color: var(--red); }
+        .text-fade { color: var(--text-muted); font-size: 11px; display: block; }
 
-        .stacked-data { display: flex; flex-direction: column; }
-        .stacked-sub { font-size: 10px; color: var(--text-muted); font-family: monospace; }
+        .icon-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text-main); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 700; font-size: 12px; }
+        #alertToggle.active { background: var(--red); color: white; box-shadow: 0 0 15px var(--red); }
 
-        #status-container { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 15px; cursor: pointer; user-select: none; }
-        .sync-dot { width: 10px; height: 10px; background: var(--green); border-radius: 50%; display: inline-block; transition: 0.3s; }
-        .sync-pulse { animation: syncPulse 2s infinite; position: absolute; left: 0; top: 0; width: 100%; height: 100%; border-radius: 50%; background: inherit; }
-        @keyframes syncPulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(3.5); opacity: 0; } }
-        #status { font-size: 12px; color: var(--text-muted); font-family: monospace; font-weight: 600; }
-
-        #alertToggle { padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border); background: white; cursor: pointer; font-size: 12px; font-weight: 600; transition: 0.3s; }
-        #alertToggle.active { background: var(--red); color: white; border-color: var(--red); box-shadow: 0 0 10px rgba(239, 68, 68, 0.4); }
+        #status-container { display: flex; float: right; align-items: center; gap: 12px; margin-top: 15px; cursor: pointer; background: var(--surface); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border); }
+        .sync-dot { width: 10px; height: 10px; background: var(--green); border-radius: 50%; }
+        #countdown-wrap { font-size: 11px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--primary); background: var(--bg-color); padding: 2px 8px; border-radius: 10px; }
     </style>
 </head>
-<body>
+<body class="dark-theme">
 
 <header>
-    <h1>Trade Matrix</h1>
-    <button id="alertToggle">🔕 Alerts Off</button>
+    <h1>Trade Matrix Pro</h1>
+    <div class="header-btns">
+        <button id="themeToggle" class="icon-btn" onclick="toggleTheme()">🌙 Dark</button>
+        <button id="alertToggle" class="icon-btn" onclick="handleAlertToggle()">🔕 ALERTS OFF</button>
+    </div>
 </header>
 
 <div id="controls">
-    <div class="control-group">
-        <span class="control-label">Layout</span>
-        <div class="btn-group">
-            <button id="tableBtn" class="active">Table</button>
-            <button id="cardBtn">Cards</button>
-        </div>
-    </div>
-    <div class="control-group">
-        <span class="control-label">Refresh Mode</span>
-        <select id="refreshSelect">
-            <option value="0">Manual (Tap Sync)</option>
-            <option value="30">Auto 30s</option>
-            <option value="60">Auto 1m</option>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+        <span style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Refresh Rate</span>
+        <select id="refreshSelect" class="icon-btn" style="width:100%">
+            <option value="0">Manual</option>
+            <option value="30">30s</option>
+            <option value="60">1m</option>
+            <option value="300">5m</option>
+            <option value="600">10m</option>
         </select>
     </div>
-    <div class="control-group" style="flex: 2; min-width: 100%;">
-        <span class="control-label">Strategy</span>
+    <div style="grid-column: span 2;">
+        <span style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px; display:block;">Active Strategies</span>
         <div id="radioGroup"></div>
     </div>
 </div>
 
-<div id="tableContainer" style="display:block;"><div id="tableWrap"></div></div>
-<div id="cardsContainer" style="display:none;"></div>
-
-<div id="status-container" onclick="fetchTrades()">
-    <div style="position:relative; width: 10px; height: 10px;">
-        <span class="sync-dot"></span>
-        <span class="sync-dot sync-pulse"></span>
-    </div>
-    <div id="status">Connecting...</div>
+<div id="chartSection">
+    <button id="closeChart" onclick="document.getElementById('chartSection').style.display='none'">✖ Close</button>
+    <div id="tradingview_widget" style="height: 100%; width: 100%;"></div>
 </div>
 
+<div id="tableContainer"><div id="tableWrap"></div></div>
+
+<div id="status-container" onclick="fetchTrades()">
+    <div id="countdown-wrap" style="display:none">NEXT: <span id="timer">0</span>s</div>
+    <div class="sync-dot"></div>
+    <div id="status">TAP TO SYNC</div>
+</div>
+
+<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
 <script>
 const JSON_URL = "https://justforfunssn-default-rtdb.europe-west1.firebasedatabase.app/webAppref.json";
-let allData = {}; let currentListKey = ""; let alertsEnabled = false; let notifiedTrades = new Set();
-let audioCtx = null; let refreshInterval = null;
+let allData = {}, currentListKey = "", alertsEnabled = false, notifiedTrades = new Set();
+let audioCtx = null, refreshInterval = null, countdownInterval = null, currentTheme = 'dark';
+let secondsRemaining = 0;
+
+function toggleTheme() {
+    currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    document.body.className = currentTheme === 'dark' ? 'dark-theme' : '';
+    document.getElementById('themeToggle').textContent = currentTheme === 'dark' ? '🌙 Dark' : '☀️ Light';
+}
 
 function initAudio() { 
     if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
     if(audioCtx.state === 'suspended') audioCtx.resume(); 
 }
 
-// MAX VOLUME SIREN (Sawtooth Wave)
-function playStrongAlert() {
+function playCriticalAlert() {
     if(!audioCtx) return;
     const now = audioCtx.currentTime;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(950, now);
+    osc.frequency.exponentialRampToValueAtTime(1300, now + 0.1);
+    osc.frequency.exponentialRampToValueAtTime(950, now + 0.2);
+    gain.gain.setValueAtTime(0.9, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(now + 0.5);
+}
 
-    osc.type = 'sawtooth'; // Aggressive buzzing sound
-    osc.frequency.setValueAtTime(440, now);
-    // Rapid Siren Pitch Shift
-    osc.frequency.linearRampToValueAtTime(880, now + 0.3);
-    osc.frequency.linearRampToValueAtTime(440, now + 0.6);
-    osc.frequency.linearRampToValueAtTime(880, now + 0.9);
-    osc.frequency.linearRampToValueAtTime(440, now + 1.2);
-
-    gain.gain.setValueAtTime(0.5, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 1.5);
-
-    osc.connect(gain); gain.connect(audioCtx.destination);
-    osc.start(); osc.stop(now + 1.5);
+function openChart(pair) {
+    let clean = pair.replace(/[\/:\s\.]/g, '').replace('USDTUSDT', 'USDT');
+    document.getElementById('chartSection').style.display = 'block';
+    new TradingView.widget({
+        "autosize": true, "symbol": "BINANCE:" + clean + ".P", "interval": "15",
+        "theme": currentTheme, "style": "1", "container_id": "tradingview_widget"
+    });
+    window.scrollTo({top: document.getElementById('chartSection').offsetTop - 20, behavior: 'smooth'});
 }
 
 async function fetchTrades() {
-    const statusText = document.getElementById("status");
-    const dot = document.querySelector(".sync-dot");
-    statusText.textContent = "Syncing...";
-    dot.style.background = "#3b82f6";
-    
+    const statusEl = document.getElementById("status");
+    statusEl.textContent = "SYNCING...";
     try {
         const res = await fetch(JSON_URL);
         allData = await res.json();
+        const keys = Object.keys(allData);
+        if(!currentListKey && keys.length > 0) currentListKey = keys[0];
         updateUI();
-        statusText.textContent = "Last Sync: " + new Date().toLocaleTimeString();
-        dot.style.background = "#10b981";
-    } catch (e) { 
-        statusText.textContent = "Sync Error"; 
-        dot.style.background = "#ef4444"; 
-    }
+        statusEl.textContent = "LIVE: " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        resetCountdown();
+    } catch (e) { statusEl.textContent = "OFFLINE"; }
 }
 
 function updateUI() {
-    const container = document.getElementById("radioGroup");
-    const keys = Object.keys(allData);
-    if(!currentListKey && keys.length > 0) currentListKey = keys[0];
-    
+    const container = document.getElementById("radioGroup"), keys = Object.keys(allData);
     container.innerHTML = keys.map(key => {
         const trades = allData[key] || [];
         const profit = trades.reduce((a, t) => a + (t.profit_pct || 0), 0);
-        const color = profit >= 0 ? 'val-green' : 'val-red';
-        return `
-            <div class="radio-option ${currentListKey === key ? 'active' : ''}" onclick="switchStrat('${key}')">
-                <div class="strat-profit ${currentListKey === key ? '' : color}">${profit >= 0 ? '+' : ''}${profit.toFixed(2)}%</div>
-                <div class="strat-label">${key}</div>
-            </div>
-        `;
+        return `<div class="radio-option ${currentListKey === key ? 'active' : ''}" onclick="switchStrat('${key}')">
+            <div class="strat-profit ${profit >= 0 ? 'val-green' : 'val-red'}">${profit.toFixed(2)}%</div>
+            <div class="strat-label">${key}</div>
+        </div>`;
     }).join('');
     renderData();
 }
 
-function switchStrat(key) { currentListKey = key; updateUI(); }
+function switchStrat(key) {
+    currentListKey = key;
+    notifiedTrades.clear();
+    updateUI();
+}
 
 function renderData() {
     const trades = allData[currentListKey] || [];
     if(alertsEnabled) checkAlerts(trades);
     
-    // Render Table
-    let tHtml = `<table><tr><th>Pair</th><th>Side</th><th>Entry</th><th>Price</th><th>Profit</th><th>Max Δ%</th><th>Min Δ%</th></tr>`;
+    let html = `<table><tr><th style="text-align:left">Pair</th><th>Side</th><th>Entry</th><th>Current</th><th>Profit</th><th>Max Gain</th><th>Drawdown</th></tr>`;
     trades.forEach(t => {
-        const isShort = t.is_short;
-        const reachedTarget = t.profit_pct >= 1.0; 
-        tHtml += `<tr class="${reachedTarget ? 'row-glow' : ''}">
-            <td style="font-weight:700;">${t.pair}</td>
-            <td><span class="side-badge ${isShort ? 'short' : 'long'}">${isShort ? 'SHORT' : 'LONG'}</span></td>
-            <td class="stacked-sub">${t.open.toFixed(6)}</td>
-            <td class="stacked-sub">${t.current.toFixed(6)}</td>
-            <td><span class="${t.profit_pct >= 0 ? 'val-green' : 'val-red'}" style="font-weight:800;">${t.profit_pct.toFixed(2)}%</span></td>
-            <td><div class="stacked-data"><span class="${!isShort ? 'val-green' : 'val-red'}">${t.max.delta_pct.toFixed(2)}%</span><span class="stacked-sub">${t.max.price.toFixed(6)}</span></div></td>
-            <td><div class="stacked-data"><span class="${isShort ? 'val-green' : 'val-red'}">${t.min.delta_pct.toFixed(2)}%</span><span class="stacked-sub">${t.min.price.toFixed(6)}</span></div></td>
+        const isWin = t.profit_pct >= 1.0;
+        const mP = (t.max && (t.max.price || t.max.rate || 0)) || 0;
+        const miP = (t.min && (t.min.price || t.min.rate || 0)) || 0;
+
+        html += `<tr class="${isWin ? 'row-glow' : ''}">
+            <td style="text-align:left"><span class="pair-link" onclick="openChart('${t.pair}')">📈 ${t.pair}</span></td>
+            <td><span class="side-badge ${t.is_short ? 'short' : 'long'}">${t.is_short ? 'S' : 'L'}</span></td>
+            <td class="font-mono" style="opacity:0.6">${t.open.toFixed(5)}</td>
+            <td class="font-mono">${t.current.toFixed(5)}</td>
+            <td class="font-mono ${t.profit_pct >= 0 ? 'val-green' : 'val-red'}" style="font-weight:800">${t.profit_pct.toFixed(2)}%</td>
+            <td><span class="val-green" style="font-weight:700">${t.max.delta_pct.toFixed(2)}%</span><span class="text-fade">${mP.toFixed(4)}</span></td>
+            <td><span class="val-red" style="font-weight:700">${t.min.delta_pct.toFixed(2)}%</span><span class="text-fade">${miP.toFixed(4)}</span></td>
         </tr>`;
     });
-    document.getElementById("tableWrap").innerHTML = tHtml + `</table>`;
-
-    // Render Cards
-    document.getElementById("cardsContainer").innerHTML = trades.map(t => `
-        <div class="card ${t.profit_pct >= 1.0 ? 'glow-active' : ''}">
-            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                <span style="font-weight:800;">${t.pair}</span>
-                <span class="side-badge ${t.is_short ? 'short' : 'long'}">${t.is_short ? 'SHORT' : 'LONG'}</span>
-            </div>
-            <div style="font-size:22px; text-align:center; padding:10px; font-weight:900;" class="${t.profit_pct >= 0 ? 'val-green' : 'val-red'}">${t.profit_pct.toFixed(2)}%</div>
-            <div style="display:flex; justify-content:space-between; font-size:11px; color:#64748b; border-top:1px solid #eee; padding-top:10px;">
-                <div class="stacked-data"><span>MAX Δ%</span><span class="${!t.is_short ? 'val-green' : 'val-red'}">${t.max.delta_pct.toFixed(2)}%</span></div>
-                <div class="stacked-data" style="text-align:right;"><span>MIN Δ%</span><span class="${t.is_short ? 'val-green' : 'val-red'}">${t.min.delta_pct.toFixed(2)}%</span></div>
-            </div>
-        </div>
-    `).join('');
+    document.getElementById("tableWrap").innerHTML = html + `</table>`;
 }
 
 function checkAlerts(trades) {
     trades.forEach(t => {
         const id = `${currentListKey}-${t.pair}`;
-        if(t.profit_pct >= 1.0 && !notifiedTrades.has(id)) {
-            playStrongAlert(); 
-            notifiedTrades.add(id);
-            if(Notification.permission === "granted") {
-                new Notification("🎯 Target Hit: " + t.pair, {body: `Profit reached ${t.profit_pct.toFixed(2)}%`});
+        if(t.profit_pct >= 1.0) {
+            if(!notifiedTrades.has(id)) {
+                playCriticalAlert();
+                notifiedTrades.add(id);
+                if(Notification.permission === "granted") new Notification("🚀 1% TARGET: " + t.pair);
             }
-        } else if (t.profit_pct < 0.9) {
-            notifiedTrades.delete(id); 
+        } else if (t.profit_pct < 0.95) {
+            notifiedTrades.delete(id);
         }
     });
 }
 
-document.getElementById('alertToggle').onclick = async (e) => {
+function handleAlertToggle() {
+    const btn = document.getElementById('alertToggle');
     if(!alertsEnabled) {
-        if(Notification.permission !== "granted") await Notification.requestPermission();
         initAudio(); alertsEnabled = true;
-        e.target.className = "active"; e.target.textContent = "🔔 Alerts ON (>=1%)";
+        btn.className = "icon-btn active"; btn.textContent = "🔔 ALERTS ON";
+        Notification.requestPermission();
+        playCriticalAlert();
     } else {
-        alertsEnabled = false; e.target.className = ""; e.target.textContent = "🔕 Alerts Off";
+        alertsEnabled = false; btn.className = "icon-btn"; btn.textContent = "🔕 ALERTS OFF";
     }
-};
+}
 
-document.getElementById("tableBtn").onclick = () => { document.getElementById("tableContainer").style.display="block"; document.getElementById("cardsContainer").style.display="none"; document.getElementById("tableBtn").className="active"; document.getElementById("cardBtn").className=""; };
-document.getElementById("cardBtn").onclick = () => { document.getElementById("tableContainer").style.display="none"; document.getElementById("cardsContainer").style.display="grid"; document.getElementById("cardBtn").className="active"; document.getElementById("tableBtn").className=""; };
+function resetCountdown() {
+    const s = parseInt(document.getElementById("refreshSelect").value);
+    if(s > 0) {
+        secondsRemaining = s;
+        document.getElementById("countdown-wrap").style.display = "block";
+        document.getElementById("timer").textContent = secondsRemaining;
+    } else {
+        document.getElementById("countdown-wrap").style.display = "none";
+    }
+}
 
-document.getElementById("refreshSelect").onchange = (e) => { 
-    if(refreshInterval) clearInterval(refreshInterval); 
-    let s = parseInt(e.target.value); 
-    if(s > 0) refreshInterval = setInterval(fetchTrades, s*1000); 
+// Global Timer Interval
+setInterval(() => {
+    if(secondsRemaining > 0) {
+        secondsRemaining--;
+        document.getElementById("timer").textContent = secondsRemaining;
+    }
+}, 1000);
+
+document.getElementById("refreshSelect").onchange = (e) => {
+    if(refreshInterval) clearInterval(refreshInterval);
+    const s = parseInt(e.target.value);
+    if(s > 0) {
+        fetchTrades();
+        refreshInterval = setInterval(fetchTrades, s * 1000);
+    } else {
+        document.getElementById("countdown-wrap").style.display = "none";
+    }
 };
 
 fetchTrades();
