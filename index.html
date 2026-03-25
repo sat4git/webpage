@@ -1,108 +1,118 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Trade Matrix | Multi-Strategy</title>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@800&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-<style>
-    :root {
-        --bg-color: #f0f4f8; --surface: #ffffff; --primary: #2563eb;
-        --text-main: #0f172a; --text-muted: #64748b; --border: #e2e8f0;
-        --green: #10b981; --green-bg: #d1fae5; --red: #ef4444; --red-bg: #fee2e2;
-        --radius: 12px; --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    }
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Trade Matrix Pro</title>
 
-    body.dark-theme {
-        --bg-color: #0b0f19; --surface: #151e2e; --primary: #3b82f6;
-        --text-main: #f8fafc; --text-muted: #94a3b8; --border: #1e293b;
-        --green-bg: rgba(16, 185, 129, 0.15); --red-bg: rgba(239, 68, 68, 0.2);
-    }
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+    <meta name="theme-color" content="#2563eb">
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    
-    body { 
-        font-family: 'Inter', sans-serif; background: var(--bg-color); 
-        color: var(--text-main); padding: 16px; transition: 0.3s;
-    }
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@800&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8; --surface: #ffffff; --primary: #2563eb;
+            --text-main: #0f172a; --text-muted: #64748b; --border: #e2e8f0;
+            --green: #10b981; --green-bg: #d1fae5; --red: #ef4444; --red-bg: #fee2e2;
+            --radius: 12px; --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
 
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    h1 { font-size: 1.5rem; font-weight: 900; letter-spacing: -0.02em; }
-    
-    .header-btns { display: flex; gap: 8px; }
-    .btn { background: var(--surface); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; color: var(--text-main); transition: 0.2s; }
-    .btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-    #alertToggle.active { background: #fbbf24; color: black; border-color: #fbbf24; box-shadow: 0 0 12px rgba(251, 191, 36, 0.5); }
+        body.dark-theme {
+            --bg-color: #0b0f19; --surface: #151e2e; --primary: #3b82f6;
+            --text-main: #f8fafc; --text-muted: #94a3b8; --border: #1e293b;
+            --green-bg: rgba(16, 185, 129, 0.15); --red-bg: rgba(239, 68, 68, 0.2);
+        }
 
-    /* HORIZONTAL CONTROLS (FEATURE 10) */
-    #controls { 
-        display: flex; flex-wrap: nowrap; align-items: center; gap: 15px;
-        background: var(--surface); padding: 12px 16px; border-radius: var(--radius); 
-        box-shadow: var(--shadow); margin-bottom: 20px; border: 1px solid var(--border);
-        overflow-x: auto; scrollbar-width: none; white-space: nowrap;
-    }
-    
-    .btn-group { display: flex; background: var(--bg-color); border-radius: 8px; padding: 4px; flex-shrink: 0; }
-    .btn-group button { border: none; background: transparent; padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 700; color: var(--text-muted); cursor: pointer; }
-    .btn-group button.active { background: var(--surface); color: var(--text-main); box-shadow: var(--shadow); }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { 
+            font-family: 'Inter', sans-serif; background: var(--bg-color); 
+            color: var(--text-main); padding: 16px; transition: 0.3s;
+        }
 
-    .control-divider { width: 1px; height: 24px; background: var(--border); flex-shrink: 0; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .logo-area { display: flex; align-items: center; gap: 10px; }
+        .logo-area img { height: 32px; width: 32px; object-fit: contain; }
+        h1 { font-size: 1.5rem; font-weight: 900; letter-spacing: -0.02em; }
+        
+        .header-btns { display: flex; gap: 8px; }
+        .btn { background: var(--surface); border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; color: var(--text-main); transition: 0.2s; }
+        .btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        #alertToggle.active { background: #fbbf24; color: black; border-color: #fbbf24; box-shadow: 0 0 12px rgba(251, 191, 36, 0.5); }
 
-    /* STRATEGY TABS */
-    #radioGroup { display: flex; gap: 10px; flex-grow: 1; }
-    .radio-option { 
-        padding: 6px 14px; border-radius: 8px; cursor: pointer; text-align: center; 
-        min-width: 90px; border: 2px solid transparent; position: relative; flex-shrink: 0;
-    }
-    .radio-option.strat-pos { background: var(--green); color: white; }
-    .radio-option.strat-neg { background: var(--red); color: white; }
-    .radio-option.active { border-color: var(--text-main); transform: translateY(-2px); box-shadow: var(--shadow); }
-    
-    .alert-dot { position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; background: #ffcc00; border: 2px solid white; border-radius: 50%; animation: pulseDot 0.8s infinite; display: none; }
-    @keyframes pulseDot { 50% { transform: scale(1.3); } }
+        /* ONE LINE CONTROLS */
+        #controls { 
+            display: flex; flex-wrap: nowrap; align-items: center; gap: 15px;
+            background: var(--surface); padding: 12px 16px; border-radius: var(--radius); 
+            box-shadow: var(--shadow); margin-bottom: 20px; border: 1px solid var(--border);
+            overflow-x: auto; scrollbar-width: none; white-space: nowrap;
+        }
+        
+        .btn-group { display: flex; background: var(--bg-color); border-radius: 8px; padding: 4px; flex-shrink: 0; }
+        .btn-group button { border: none; background: transparent; padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 700; color: var(--text-muted); cursor: pointer; }
+        .btn-group button.active { background: var(--surface); color: var(--text-main); box-shadow: var(--shadow); }
 
-    /* L/S CIRCLE BADGES (FEATURE 11) */
-    .side-icon { 
-        display: inline-flex; align-items: center; justify-content: center;
-        width: 26px; height: 26px; border-radius: 50%; 
-        font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 13px; color: white;
-    }
-    .side-icon.l { background: var(--green); }
-    .side-icon.s { background: var(--red); }
+        .control-divider { width: 1px; height: 24px; background: var(--border); flex-shrink: 0; }
 
-    /* CHART SECTION */
-    #chartSection { display: none; margin-bottom: 20px; height: 450px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); position: relative; }
-    #closeChart { position: absolute; top: 12px; right: 12px; z-index: 10; padding: 6px 14px; background: var(--red); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 800; font-size: 11px; }
+        /* STRATEGY TABS */
+        #radioGroup { display: flex; gap: 10px; flex-grow: 1; }
+        .radio-option { 
+            padding: 6px 14px; border-radius: 8px; cursor: pointer; text-align: center; 
+            min-width: 90px; border: 2px solid transparent; position: relative; flex-shrink: 0;
+        }
+        .radio-option.strat-pos { background: var(--green); color: white; }
+        .radio-option.strat-neg { background: var(--red); color: white; }
+        .radio-option.active { border-color: var(--text-main); transform: translateY(-2px); box-shadow: var(--shadow); }
+        
+        .alert-dot { position: absolute; top: -4px; right: -4px; width: 14px; height: 14px; background: #ffcc00; border: 2px solid white; border-radius: 50%; animation: pulseDot 0.8s infinite; display: none; }
+        @keyframes pulseDot { 50% { transform: scale(1.3); } }
 
-    /* TABLE STYLES */
-    #tableContainer { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow-x: auto; border: 1px solid var(--border); }
-    table { width: 100%; border-collapse: collapse; min-width: 800px; }
-    th { text-align: left; padding: 14px 16px; font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.02); }
-    td { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 14px; }
-    
-    .row-profit { animation: glowGreen 2s infinite; }
-    .row-loss { background-color: var(--red-bg) !important; border-left: 4px solid var(--red); }
-    @keyframes glowGreen { 50% { background-color: var(--green-bg); } }
+        /* CHART SECTION (RESTORED) */
+        #chartSection { display: none; margin-bottom: 20px; height: 450px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); position: relative; }
+        #closeChart { position: absolute; top: 12px; right: 12px; z-index: 10; padding: 6px 14px; background: var(--red); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 800; font-size: 11px; }
 
-    /* CARD STYLES */
-    .card { background: var(--surface); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
-    .card-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
-    .label { color: var(--text-muted); font-weight: 600; }
+        /* L/S CIRCLES */
+        .side-icon { 
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 26px; height: 26px; border-radius: 50%; 
+            font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 13px; color: white;
+        }
+        .side-icon.l { background: var(--green); }
+        .side-icon.s { background: var(--red); }
 
-    /* FOOTER */
-    #footer-bar { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 20px; color: var(--text-muted); font-size: 12px; font-weight: 800; }
-    .sync-icon { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--text-muted); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; display: none; }
-    .sync-icon.active { display: inline-block; }
-    @keyframes spin { 100% { transform: rotate(360deg); } }
+        /* TABLE */
+        #tableContainer { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow-x: auto; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th { text-align: left; padding: 14px 16px; font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.02); }
+        td { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 14px; }
+        
+        .row-profit { animation: glowGreen 2s infinite; }
+        .row-loss { background-color: var(--red-bg) !important; border-left: 4px solid var(--red); }
+        @keyframes glowGreen { 50% { background-color: var(--green-bg); } }
 
-    .pair-name { color: var(--primary); cursor: pointer; font-weight: 800; text-decoration: underline; }
-    .monospace { font-family: 'JetBrains Mono', monospace; }
-</style>
+        /* CARDS */
+        .card { background: var(--surface); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; }
+        .card-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+        .label { color: var(--text-muted); font-weight: 600; }
+
+        #footer-bar { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 20px; color: var(--text-muted); font-size: 12px; font-weight: 800; }
+        .sync-icon { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--text-muted); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; display: none; }
+        .sync-icon.active { display: inline-block; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .pair-name { color: var(--primary); cursor: pointer; font-weight: 800; text-decoration: underline; }
+        .monospace { font-family: 'JetBrains Mono', monospace; }
+    </style>
 </head>
 <body class="dark-theme">
 
 <header>
-    <h1>TRADE MATRIX</h1>
+    <div class="logo-area">
+        <img src="logo.png" alt="Logo">
+        <h1>TRADE MATRIX</h1>
+    </div>
     <div class="header-btns">
         <button class="btn" onclick="document.body.classList.toggle('dark-theme')">🌙 MODE</button>
         <button id="alertToggle" class="btn" onclick="toggleAlerts()">🔕 ALERTS OFF</button>
@@ -145,12 +155,19 @@
 </div>
 
 <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
+
 <script>
+// PWA Service Worker Registration
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+}
+
 const JSON_URL = "https://justforfunssn-default-rtdb.europe-west1.firebasedatabase.app/webAppref.json";
 let allData = {}, currentKey = "", alertsEnabled = false, notified = new Set();
 let audioCtx = null, refreshInterval = null;
 
-// Unlock Audio
 document.body.addEventListener('mousedown', () => {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -170,13 +187,7 @@ function playStrongAlert() {
     osc.start(); osc.stop(now + 1);
 }
 
-function toggleAlerts() {
-    alertsEnabled = !alertsEnabled;
-    const btn = document.getElementById('alertToggle');
-    btn.classList.toggle('active', alertsEnabled);
-    btn.innerHTML = alertsEnabled ? "🔔 ALERTS ON" : "🔕 ALERTS OFF";
-}
-
+// RESTORED: Chart Opener
 function openChart(pair) {
     document.getElementById('chartSection').style.display = 'block';
     const symbol = pair.replace(/[\/:\s\.]/g, '').replace('USDTUSDT', 'USDT');
@@ -185,6 +196,22 @@ function openChart(pair) {
         "theme": document.body.classList.contains('dark-theme') ? "dark" : "light",
         "style": "1", "container_id": "tv_chart_container"
     });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderMaxMin(pct, price, isHighlight) {
+    const color = isHighlight ? 'var(--green)' : 'var(--red)';
+    return `<div style="display:flex; flex-direction:column; align-items: flex-start;">
+                <span style="color:${color}; font-weight:800;">${parseFloat(pct || 0).toFixed(2)}%</span>
+                <span class="monospace" style="opacity:0.6; font-size:10px; margin-top:2px;">${parseFloat(price || 0).toFixed(5)}</span>
+            </div>`;
+}
+
+function toggleAlerts() {
+    alertsEnabled = !alertsEnabled;
+    const btn = document.getElementById('alertToggle');
+    btn.classList.toggle('active', alertsEnabled);
+    btn.innerHTML = alertsEnabled ? "🔔 ALERTS ON" : "🔕 ALERTS OFF";
 }
 
 async function sync() {
@@ -218,13 +245,11 @@ function checkAlarms(trades, forceSound) {
 
 function switchStrat(k) {
     currentKey = k;
-    renderUI(true); // Immediate sound if thresholds met
+    renderUI(true); 
 }
 
 function renderUI(isManual) {
     const keys = Object.keys(allData);
-    
-    // Tabs
     document.getElementById("radioGroup").innerHTML = keys.map(k => {
         const trades = allData[k] || [];
         const profit = trades.reduce((a, t) => a + (t.profit_pct || 0), 0);
@@ -239,7 +264,6 @@ function renderUI(isManual) {
     const trades = allData[currentKey] || [];
     checkAlarms(trades, isManual);
 
-    // Table
     document.getElementById("tableBody").innerHTML = trades.map(t => {
         const isS = t.is_short, rowCls = t.profit_pct >= 1.0 ? 'row-profit' : (t.profit_pct <= -5.0 ? 'row-loss' : '');
         return `<tr class="${rowCls}">
@@ -248,25 +272,24 @@ function renderUI(isManual) {
             <td class="monospace">${t.open.toFixed(5)}</td>
             <td class="monospace" style="font-weight:700;">${t.current.toFixed(5)}</td>
             <td style="font-weight:900; color:${t.profit_pct >= 0 ? 'var(--green)' : 'var(--red)'}">${t.profit_pct.toFixed(2)}%</td>
-            <td class="monospace" style="color:var(--green)">${t.max?.delta_pct.toFixed(2)}%</td>
-            <td class="monospace" style="color:var(--red)">${t.min?.delta_pct.toFixed(2)}%</td>
+            <td>${renderMaxMin(t.max?.delta_pct, t.max?.price, !isS)}</td>
+            <td>${renderMaxMin(t.min?.delta_pct, t.min?.price, isS)}</td>
         </tr>`;
     }).join('');
 
-    // Cards
     document.getElementById("cardsContainer").innerHTML = trades.map(t => {
         const isS = t.is_short, cardCls = t.profit_pct <= -5.0 ? 'row-loss' : '';
         const pCol = t.profit_pct >= 0 ? 'var(--green)' : 'var(--red)';
         return `<div class="card ${cardCls}">
             <div class="card-row">
-                <span class="pair-name" onclick="openChart('${t.pair}')">${t.pair}</span>
+                <span class="pair-name" onclick="openChart('${t.pair}')" style="font-weight:900;">${t.pair}</span>
                 <span class="side-icon ${isS ? 's' : 'l'}">${isS ? 'S' : 'L'}</span>
             </div>
             <div class="card-row" style="font-size: 20px; font-weight:900; color:${pCol}; border-bottom:1px solid var(--border); padding: 5px 0;">${t.profit_pct.toFixed(2)}%</div>
             <div class="card-row"><span class="label">Entry:</span> <span class="monospace">${t.open.toFixed(5)}</span></div>
             <div class="card-row"><span class="label">Current:</span> <span class="monospace" style="font-weight:700;">${t.current.toFixed(5)}</span></div>
-            <div class="card-row" style="margin-top:5px;"><span class="label">Max:</span> <span style="color:var(--green); font-weight:800;">${t.max?.delta_pct.toFixed(2)}%</span></div>
-            <div class="card-row"><span class="label">Min:</span> <span style="color:var(--red); font-weight:800;">${t.min?.delta_pct.toFixed(2)}%</span></div>
+            <div class="card-row" style="margin-top:5px;"><span class="label">Max:</span> ${renderMaxMin(t.max?.delta_pct, t.max?.price, !isS)}</div>
+            <div class="card-row"><span class="label">Min:</span> ${renderMaxMin(t.min?.delta_pct, t.min?.price, isS)}</div>
         </div>`;
     }).join('');
 }
