@@ -29,26 +29,27 @@
             --red: #ef4444; --red-bg: rgba(239, 68, 68, 0.15);
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Inter', sans-serif; background: var(--bg-color); color: var(--text-main); padding: 20px; -webkit-font-smoothing: antialiased; }
 
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        h1 { font-size: 1.6rem; font-weight: 900; background: linear-gradient(135deg, var(--primary), #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        h1 { font-size: 1.75rem; font-weight: 900; background: linear-gradient(135deg, var(--primary), #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
         #controls {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;
-            background: var(--surface); padding: 20px; border-radius: var(--radius);
+            background: var(--surface); padding: 24px; border-radius: var(--radius);
             border: 1px solid var(--border); box-shadow: var(--shadow-md); margin-bottom: 25px;
         }
 
-        #radioGroup { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+        #radioGroup { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
         .radio-option {
-            min-width: 140px; background: var(--bg-color); border: 2px solid transparent;
-            padding: 14px; border-radius: 12px; cursor: pointer; transition: 0.2s;
+            min-width: 145px; background: var(--bg-color); border: 2px solid transparent;
+            padding: 16px; border-radius: 12px; cursor: pointer; transition: 0.2s; flex-shrink: 0;
+            touch-action: manipulation;
         }
         .radio-option.active { border-color: var(--primary); background: var(--surface); box-shadow: var(--shadow-md); }
-        .strat-profit { font-size: 17px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
-        .strat-label { font-size: 10px; font-weight: 700; text-transform: uppercase; margin-top: 4px; color: var(--text-muted); }
+        .strat-profit { font-size: 18px; font-weight: 800; font-family: 'JetBrains Mono', monospace; pointer-events: none; }
+        .strat-label { font-size: 11px; font-weight: 700; text-transform: uppercase; margin-top: 4px; color: var(--text-muted); pointer-events: none; }
 
         #chartSection {
             display: none; position: relative; margin-bottom: 25px; 
@@ -78,12 +79,13 @@
         .font-mono { font-family: 'JetBrains Mono', monospace; }
         .val-green { color: var(--green); }
         .val-red { color: var(--red); }
-        .text-fade { color: var(--text-muted); font-size: 11px; display: block; }
+        .text-fade { color: var(--text-muted); font-size: 11px; display: block; opacity: 0.7; }
+        .stacked-data { display: flex; flex-direction: column; align-items: flex-end; }
 
-        .icon-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text-main); padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: 700; font-size: 12px; }
+        .icon-btn { background: var(--surface); border: 1px solid var(--border); color: var(--text-main); padding: 10px 18px; border-radius: 20px; cursor: pointer; font-weight: 700; font-size: 12px; }
         #alertToggle.active { background: var(--red); color: white; box-shadow: 0 0 15px var(--red); }
 
-        #status-container { display: flex; float: right; align-items: center; gap: 12px; margin-top: 15px; cursor: pointer; background: var(--surface); padding: 8px 15px; border-radius: 20px; border: 1px solid var(--border); }
+        #status-container { display: flex; float: right; align-items: center; gap: 10px; margin-top: 15px; cursor: pointer; background: var(--surface); padding: 10px 16px; border-radius: 20px; border: 1px solid var(--border); }
         .sync-dot { width: 10px; height: 10px; background: var(--green); border-radius: 50%; }
         #countdown-wrap { font-size: 11px; font-weight: 800; font-family: 'JetBrains Mono', monospace; color: var(--primary); background: var(--bg-color); padding: 2px 8px; border-radius: 10px; }
     </style>
@@ -102,15 +104,15 @@
     <div style="display:flex; flex-direction:column; gap:8px;">
         <span style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Refresh Rate</span>
         <select id="refreshSelect" class="icon-btn" style="width:100%">
-            <option value="0">Manual</option>
-            <option value="30">30s</option>
-            <option value="60">1m</option>
-            <option value="300">5m</option>
-            <option value="600">10m</option>
+            <option value="0">Manual Only</option>
+            <option value="30">30 Seconds</option>
+            <option value="60">1 Minute</option>
+            <option value="300">5 Minutes</option>
+            <option value="600">10 Minutes</option>
         </select>
     </div>
     <div style="grid-column: span 2;">
-        <span style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px; display:block;">Active Strategies</span>
+        <span style="font-size:11px; font-weight:800; color:var(--text-muted); text-transform:uppercase; margin-bottom:8px; display:block;">Strategies</span>
         <div id="radioGroup"></div>
     </div>
 </div>
@@ -123,7 +125,7 @@
 <div id="tableContainer"><div id="tableWrap"></div></div>
 
 <div id="status-container" onclick="fetchTrades()">
-    <div id="countdown-wrap" style="display:none">NEXT: <span id="timer">0</span>s</div>
+    <div id="countdown-wrap" style="display:none">NEXT SYNC: <span id="timer">0</span>s</div>
     <div class="sync-dot"></div>
     <div id="status">TAP TO SYNC</div>
 </div>
@@ -132,8 +134,7 @@
 <script>
 const JSON_URL = "https://justforfunssn-default-rtdb.europe-west1.firebasedatabase.app/webAppref.json";
 let allData = {}, currentListKey = "", alertsEnabled = false, notifiedTrades = new Set();
-let audioCtx = null, refreshInterval = null, countdownInterval = null, currentTheme = 'dark';
-let secondsRemaining = 0;
+let audioCtx = null, refreshInterval = null, currentTheme = 'dark', secondsRemaining = 0;
 
 function toggleTheme() {
     currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
@@ -151,16 +152,20 @@ function playCriticalAlert() {
     const now = audioCtx.currentTime;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(950, now);
-    osc.frequency.exponentialRampToValueAtTime(1300, now + 0.1);
-    osc.frequency.exponentialRampToValueAtTime(950, now + 0.2);
+    
+    osc.type = 'square'; // Maximum harmonic presence
+    osc.frequency.setValueAtTime(800, now);
+    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.1);
+    osc.frequency.exponentialRampToValueAtTime(800, now + 0.2);
+    
     gain.gain.setValueAtTime(0.9, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+    
     osc.connect(gain);
     gain.connect(audioCtx.destination);
+    
     osc.start();
-    osc.stop(now + 0.5);
+    osc.stop(now + 0.6);
 }
 
 function openChart(pair) {
@@ -174,17 +179,15 @@ function openChart(pair) {
 }
 
 async function fetchTrades() {
-    const statusEl = document.getElementById("status");
-    statusEl.textContent = "SYNCING...";
     try {
         const res = await fetch(JSON_URL);
         allData = await res.json();
         const keys = Object.keys(allData);
         if(!currentListKey && keys.length > 0) currentListKey = keys[0];
         updateUI();
-        statusEl.textContent = "LIVE: " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        document.getElementById("status").textContent = "LIVE: " + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         resetCountdown();
-    } catch (e) { statusEl.textContent = "OFFLINE"; }
+    } catch (e) { console.error(e); }
 }
 
 function updateUI() {
@@ -192,7 +195,7 @@ function updateUI() {
     container.innerHTML = keys.map(key => {
         const trades = allData[key] || [];
         const profit = trades.reduce((a, t) => a + (t.profit_pct || 0), 0);
-        return `<div class="radio-option ${currentListKey === key ? 'active' : ''}" onclick="switchStrat('${key}')">
+        return `<div class="radio-option ${currentListKey === key ? 'active' : ''}" onclick="switchStrat(event, '${key}')">
             <div class="strat-profit ${profit >= 0 ? 'val-green' : 'val-red'}">${profit.toFixed(2)}%</div>
             <div class="strat-label">${key}</div>
         </div>`;
@@ -200,7 +203,8 @@ function updateUI() {
     renderData();
 }
 
-function switchStrat(key) {
+function switchStrat(event, key) {
+    if(event) event.stopPropagation();
     currentListKey = key;
     notifiedTrades.clear();
     updateUI();
@@ -221,9 +225,19 @@ function renderData() {
             <td><span class="side-badge ${t.is_short ? 'short' : 'long'}">${t.is_short ? 'S' : 'L'}</span></td>
             <td class="font-mono" style="opacity:0.6">${t.open.toFixed(5)}</td>
             <td class="font-mono">${t.current.toFixed(5)}</td>
-            <td class="font-mono ${t.profit_pct >= 0 ? 'val-green' : 'val-red'}" style="font-weight:800">${t.profit_pct.toFixed(2)}%</td>
-            <td><span class="val-green" style="font-weight:700">${t.max.delta_pct.toFixed(2)}%</span><span class="text-fade">${mP.toFixed(4)}</span></td>
-            <td><span class="val-red" style="font-weight:700">${t.min.delta_pct.toFixed(2)}%</span><span class="text-fade">${miP.toFixed(4)}</span></td>
+            <td class="font-mono ${t.profit_pct >= 0 ? 'val-green' : 'val-red'}" style="font-weight:800; font-size:15px;">${t.profit_pct.toFixed(2)}%</td>
+            <td>
+                <div class="stacked-data">
+                    <span class="val-green" style="font-weight:700">${t.max.delta_pct.toFixed(2)}%</span>
+                    <span class="text-fade">${mP.toFixed(4)}</span>
+                </div>
+            </td>
+            <td>
+                <div class="stacked-data">
+                    <span class="val-red" style="font-weight:700">${t.min.delta_pct.toFixed(2)}%</span>
+                    <span class="text-fade">${miP.toFixed(4)}</span>
+                </div>
+            </td>
         </tr>`;
     });
     document.getElementById("tableWrap").innerHTML = html + `</table>`;
@@ -238,7 +252,7 @@ function checkAlerts(trades) {
                 notifiedTrades.add(id);
                 if(Notification.permission === "granted") new Notification("🚀 1% TARGET: " + t.pair);
             }
-        } else if (t.profit_pct < 0.95) {
+        } else if (t.profit_pct < 0.9) {
             notifiedTrades.delete(id);
         }
     });
@@ -249,8 +263,8 @@ function handleAlertToggle() {
     if(!alertsEnabled) {
         initAudio(); alertsEnabled = true;
         btn.className = "icon-btn active"; btn.textContent = "🔔 ALERTS ON";
-        Notification.requestPermission();
         playCriticalAlert();
+        Notification.requestPermission();
     } else {
         alertsEnabled = false; btn.className = "icon-btn"; btn.textContent = "🔕 ALERTS OFF";
     }
@@ -267,7 +281,6 @@ function resetCountdown() {
     }
 }
 
-// Global Timer Interval
 setInterval(() => {
     if(secondsRemaining > 0) {
         secondsRemaining--;
