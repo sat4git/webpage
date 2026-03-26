@@ -191,19 +191,69 @@
 
         /* ── CHART SECTION ──────────────────────────────────────── */
         #chartSection {
-            display: none; margin-bottom: 20px; height: 460px;
+            display: none; margin-bottom: 20px;
             border-radius: var(--radius-lg); overflow: hidden;
             border: 1px solid var(--border2); position: relative;
             box-shadow: 0 8px 32px rgba(0,0,0,0.4);
             animation: slideDown 0.25s ease;
+            background: var(--bg2);
         }
         @keyframes slideDown { from { opacity:0; transform: translateY(-10px); } to { opacity:1; transform: translateY(0); } }
+
+        /* toolbar above chart */
+        #chartToolbar {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 14px; border-bottom: 1px solid var(--border);
+            background: var(--bg3); flex-wrap: wrap;
+        }
+        #chartTitle {
+            font-family: var(--display); font-weight: 900; font-size: 14px;
+            color: var(--text); letter-spacing: 0.05em; flex: 1;
+        }
+        .chart-meta {
+            display: flex; gap: 14px; flex-wrap: wrap; align-items: center;
+        }
+        .chart-meta-item {
+            display: flex; flex-direction: column; align-items: flex-end; gap: 1px;
+        }
+        .cm-label { font-size: 9px; font-family: var(--display); letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; }
+        .cm-val   { font-family: var(--mono); font-size: 12px; font-weight: 700; }
+
+        .chart-legend {
+            display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+            padding: 6px 14px; background: var(--bg2); border-bottom: 1px solid var(--border);
+            font-size: 11px; font-family: var(--mono);
+        }
+        .leg-item { display: flex; align-items: center; gap: 5px; color: var(--muted); }
+        .leg-line { width: 18px; height: 2px; border-radius: 1px; }
+        .leg-line.dashed { background: repeating-linear-gradient(90deg, currentColor 0, currentColor 4px, transparent 4px, transparent 8px); }
+
+        #lwChart { height: 460px; }
+
+        #chartLoading {
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            background: var(--bg2); z-index: 20; flex-direction: column; gap: 12px;
+        }
+        #chartLoading .lc-spinner {
+            width: 32px; height: 32px; border: 3px solid var(--border2);
+            border-top-color: var(--primary); border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        #chartLoading p { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+
         #closeChart {
-            position: absolute; top: 12px; right: 12px; z-index: 10;
             padding: 5px 12px; background: var(--red); color: white;
             border: none; border-radius: 6px; cursor: pointer;
             font-weight: 800; font-size: 11px; font-family: var(--display); letter-spacing: 0.05em;
+            flex-shrink: 0;
         }
+        #tvLink {
+            padding: 5px 12px; background: var(--bg2); color: var(--primary);
+            border: 1px solid var(--primary); border-radius: 6px; cursor: pointer;
+            font-weight: 700; font-size: 11px; font-family: var(--display); letter-spacing: 0.05em;
+            text-decoration: none; flex-shrink: 0;
+        }
+        #tvLink:hover { background: var(--primary); color: #fff; }
 
         /* ── TABLE ──────────────────────────────────────────────── */
         #tableWrap {
@@ -247,10 +297,27 @@
         tbody tr:hover { background: rgba(255,255,255,0.03); }
         td { padding: 13px 16px; font-size: 13px; vertical-align: middle; }
 
-        .tr-profit { background: linear-gradient(90deg, rgba(63,185,80,0.07) 0%, transparent 60%); }
-        .tr-profit td:first-child { border-left: 3px solid var(--green2); }
-        .tr-loss   { background: linear-gradient(90deg, rgba(248,81,73,0.09) 0%, transparent 60%); }
-        .tr-loss   td:first-child { border-left: 3px solid var(--red2); }
+        .tr-profit {
+            background: linear-gradient(90deg, rgba(63,185,80,0.28) 0%, rgba(63,185,80,0.12) 50%, rgba(63,185,80,0.04) 100%) !important;
+            box-shadow: inset 0 0 0 1px rgba(86,211,100,0.25);
+        }
+        .tr-profit td:first-child { border-left: 4px solid var(--green2); }
+        .tr-profit .pct-val { text-shadow: 0 0 10px rgba(86,211,100,0.7); }
+        .tr-profit:hover {
+            background: linear-gradient(90deg, rgba(63,185,80,0.38) 0%, rgba(63,185,80,0.18) 50%, rgba(63,185,80,0.08) 100%) !important;
+        }
+        body.light .tr-profit {
+            background: linear-gradient(90deg, rgba(63,185,80,0.22) 0%, rgba(63,185,80,0.08) 100%) !important;
+            box-shadow: inset 0 0 0 1px rgba(63,185,80,0.35);
+        }
+        .tr-loss {
+            background: linear-gradient(90deg, rgba(248,81,73,0.22) 0%, rgba(248,81,73,0.08) 50%, rgba(248,81,73,0.02) 100%) !important;
+            box-shadow: inset 0 0 0 1px rgba(255,123,114,0.2);
+        }
+        .tr-loss td:first-child { border-left: 4px solid var(--red2); }
+        .tr-loss:hover {
+            background: linear-gradient(90deg, rgba(248,81,73,0.32) 0%, rgba(248,81,73,0.14) 100%) !important;
+        }
 
         .pair-link {
             font-family: var(--mono); font-weight: 700; font-size: 13px;
@@ -445,19 +512,37 @@
 
 <!-- CHART -->
 <div id="chartSection">
-    <button id="closeChart" onclick="closeChart()">✕ CLOSE</button>
-    <div id="chartInfo">
-        <div id="chartInfoTitle">—</div>
-        <div class="ci-row"><span class="ci-label">Side</span><span class="ci-val" id="ci-side">—</span></div>
-        <div class="ci-row"><span class="ci-label">Entry Price</span><span class="ci-val" id="ci-entry">—</span></div>
-        <div class="ci-row"><span class="ci-label">Entry Time</span><span class="ci-val" id="ci-etime">—</span></div>
-        <div class="ci-row"><span class="ci-label">Current</span><span class="ci-val" id="ci-current">—</span></div>
-        <div class="ci-row"><span class="ci-label">P&L</span><span class="ci-val" id="ci-pnl">—</span></div>
-        <div class="ci-row"><span class="ci-label">Max Price</span><span class="ci-val" id="ci-maxprice">—</span></div>
-        <div class="ci-row"><span class="ci-label">Max Time</span><span class="ci-val" id="ci-maxtime"><span class="ci-loading">fetching…</span></span></div>
-        <div class="ci-row"><span class="ci-label">Max Δ</span><span class="ci-val" id="ci-maxdelta">—</span></div>
+    <div id="chartLoading">
+        <div class="lc-spinner"></div>
+        <p id="chartLoadingText">Loading candles…</p>
     </div>
-    <div id="tv_chart_container" style="height:100%;"></div>
+    <!-- Toolbar -->
+    <div id="chartToolbar">
+        <div id="chartTitle">—</div>
+        <div class="chart-meta" id="chartMeta"></div>
+        <a id="tvLink" href="#" target="_blank" rel="noopener">↗ TradingView</a>
+        <button id="closeChart" onclick="closeChart()">✕ CLOSE</button>
+    </div>
+    <!-- Legend -->
+    <div class="chart-legend">
+        <div class="leg-item">
+            <div class="leg-line" style="background:#58a6ff; height:2px; border-top: 2px dashed #58a6ff; background:none;"></div>
+            Entry price
+        </div>
+        <div class="leg-item">
+            <div class="leg-line" id="leg-max-line" style="border-top: 2px dashed #56d364; background:none;"></div>
+            Max price
+        </div>
+        <div class="leg-item">
+            <div style="font-size:13px;">▲</div> Entry candle
+        </div>
+        <div class="leg-item">
+            <div style="font-size:13px;">★</div> Max profit candle
+        </div>
+        <div class="leg-item" style="margin-left:auto; color:var(--muted2); font-size:10px;">15m · Binance Futures</div>
+    </div>
+    <!-- Chart canvas -->
+    <div id="lwChart"></div>
 </div>
 
 <!-- TABLE VIEW -->
@@ -506,7 +591,7 @@
 </div><!-- /app -->
 <div id="toast"></div>
 
-<script src="https://s3.tradingview.com/tv.js" async></script>
+<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 <script>
 // ─── CONFIG ─────────────────────────────────────────────────────────────
 const JSON_URL = "https://justforfunssn-default-rtdb.europe-west1.firebasedatabase.app/webAppref.json";
@@ -872,113 +957,200 @@ function checkAlerts(trades, isManual) {
     if (!anyActive) stopRepeatingAlert();
 }
 
-// ─── BINANCE KLINE LOOKUP ─────────────────────────────────────────────────
-// Given a symbol + open_date + max_price, find the candle that hit max_price
-// Uses /api/v3/klines on the futures endpoint (fapi) for perpetuals
-async function findMaxPriceTime(symbol, openDateStr, maxPrice, isShort) {
-    try {
-        // Parse open_date: '2026-03-23 02:30:12.624036'
-        const openTs = new Date(openDateStr.replace(' ', 'T')).getTime();
-        if (isNaN(openTs)) return null;
+// ─── LIGHTWEIGHT CHARTS ───────────────────────────────────────────────────
+let lwChartInstance = null;
+let lwCandleSeries  = null;
 
-        // Binance futures symbol: strip /: etc
-        const bSymbol = symbol.replace(/[\/:\s\.]/g,'').replace('USDTUSDT','USDT').toUpperCase();
-
-        // Fetch 15m klines from open_date to now (max 500 candles ≈ 5 days)
-        const endTs  = Date.now();
-        const url    = `https://fapi.binance.com/fapi/v1/klines?symbol=${bSymbol}&interval=15m&startTime=${openTs}&endTime=${endTs}&limit=500`;
-        const r      = await fetch(url);
-        if (!r.ok) throw new Error('Binance HTTP ' + r.status);
-        const klines = await r.json();
-        // kline format: [openTime, open, high, low, close, ...]
-        const target = parseFloat(maxPrice);
-        let best = null, bestDiff = Infinity;
-        for (const k of klines) {
-            const high  = parseFloat(k[2]);
-            const low   = parseFloat(k[3]);
-            const check = isShort ? low : high;
-            const diff  = Math.abs(check - target);
-            if (diff < bestDiff) { bestDiff = diff; best = k; }
-        }
-        if (!best) return null;
-        return new Date(best[0]).toLocaleString();
-    } catch(e) {
-        console.warn('Binance lookup failed:', e);
-        return null;
-    }
+function bSymbol(pair) {
+    // e.g. "PEOPLE/USDT:USDT" → "PEOPLEUSDT"
+    return pair.replace(/[\/:\s\.]/g, '').replace('USDTUSDT', 'USDT').toUpperCase();
 }
 
-// ─── CHART ───────────────────────────────────────────────────────────────
 async function openChart(pair) {
-    // Find the trade object
     const trades = allData[currentKey] || [];
     const t = trades.find(x => x.pair === pair);
+    if (!t) return;
 
-    // Show section immediately
-    document.getElementById('chartSection').style.display = 'block';
-    document.getElementById('tv_chart_container').innerHTML = '';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    // Populate info overlay
-    if (t) {
-        const isS    = t.is_short;
-        const pPos   = t.profit_pct >= 0;
-        const info   = document.getElementById('chartInfo');
-        info.style.display = 'block';
-        document.getElementById('chartInfoTitle').textContent = pair;
-        document.getElementById('ci-side').innerHTML    = `<span class="side-badge ${isS?'s':'l'}" style="display:inline-flex;">${isS?'SHORT':'LONG'}</span>`;
-        document.getElementById('ci-entry').textContent  = fmt(t.open, 5);
-        // Parse open_date if present
-        const od = t.open_date || t.open_time || null;
-        document.getElementById('ci-etime').textContent  = od ? new Date(od.replace(' ','T')).toLocaleString() : '—';
-        document.getElementById('ci-current').textContent = fmt(t.current, 5);
-        const pnlEl = document.getElementById('ci-pnl');
-        pnlEl.textContent  = fmtPct(t.profit_pct);
-        pnlEl.style.color  = pPos ? 'var(--green2)' : 'var(--red2)';
-        document.getElementById('ci-maxprice').textContent = fmt(t.max?.price||0, 5);
-        const maxDEl = document.getElementById('ci-maxdelta');
-        maxDEl.textContent = fmtPct(t.max?.delta_pct||0);
-        maxDEl.style.color = !isS ? 'var(--green2)' : 'var(--red2)';
-        document.getElementById('ci-maxtime').innerHTML = '<span class="ci-loading">fetching…</span>';
-
-        // Async Binance lookup for max-price timestamp
-        if (t.max?.price && od) {
-            findMaxPriceTime(pair, od, t.max.price, isS).then(ts => {
-                document.getElementById('ci-maxtime').textContent = ts || 'not found';
-            });
-        } else {
-            document.getElementById('ci-maxtime').textContent = 'no data';
-        }
-    } else {
-        document.getElementById('chartInfo').style.display = 'none';
-    }
-
-    // Load TradingView widget
-    const symbol = pair.replace(/[\/:\s\.]/g,'').replace('USDTUSDT','USDT');
+    const isS   = t.is_short;
+    const sym   = bSymbol(pair);
     const isDark = !document.body.classList.contains('light');
 
-    if (window.TradingView) {
-        new TradingView.widget({
-            autosize: true,
-            symbol: "BINANCE:" + symbol + ".P",
-            interval: "15",
-            theme: isDark ? "dark" : "light",
-            style: "1",
-            container_id: "tv_chart_container",
-            hide_side_toolbar: false,
-            allow_symbol_change: true,
-            save_image: false,
-            // Show entry price as a horizontal line via studies override
-            // TradingView lightweight doesn't support programmatic lines on the widget version,
-            // so we overlay it visually in #chartInfo instead.
+    // ── Show section & loading overlay ───────────────────────────
+    const section = document.getElementById('chartSection');
+    section.style.display = 'block';
+    document.getElementById('chartLoading').style.display = 'flex';
+    document.getElementById('chartLoadingText').textContent = `Fetching ${pair} candles from Binance…`;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // ── Toolbar & meta strip ──────────────────────────────────────
+    document.getElementById('chartTitle').textContent = `${pair}  ·  ${isS ? 'SHORT ▼' : 'LONG ▲'}`;
+    document.getElementById('tvLink').href = `https://www.tradingview.com/chart/?symbol=BINANCE:${sym}.P`;
+
+    const pPos   = t.profit_pct >= 0;
+    const maxCol = !isS ? '#56d364' : '#ff7b72';
+    document.getElementById('leg-max-line').style.borderTopColor = maxCol;
+    document.getElementById('chartMeta').innerHTML = `
+        <div class="chart-meta-item"><span class="cm-label">Entry</span><span class="cm-val">${fmt(t.open,5)}</span></div>
+        <div class="chart-meta-item"><span class="cm-label">Current</span><span class="cm-val">${fmt(t.current,5)}</span></div>
+        <div class="chart-meta-item"><span class="cm-label">P&amp;L</span><span class="cm-val" style="color:${pPos?'var(--green2)':'var(--red2)'};">${fmtPct(t.profit_pct)}</span></div>
+        <div class="chart-meta-item"><span class="cm-label">Max Δ</span><span class="cm-val" style="color:${maxCol};">${fmtPct(t.max?.delta_pct||0)}</span></div>
+    `;
+
+    try {
+        // ── Fetch klines from Binance Futures ─────────────────────
+        const openDateStr = t.open_date || '';
+        const openTs = openDateStr
+            ? new Date(openDateStr.replace(' ', 'T')).getTime()
+            : Date.now() - 7 * 24 * 3600 * 1000;
+        const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${sym}&interval=15m&startTime=${openTs}&limit=500`;
+        const r   = await fetch(url);
+        if (!r.ok) throw new Error(`Binance returned ${r.status} for ${sym}`);
+        const klines = await r.json();
+        if (!Array.isArray(klines) || klines.length === 0) throw new Error('No candle data returned');
+
+        // ── Destroy previous chart instance ───────────────────────
+        if (lwChartInstance) { try { lwChartInstance.remove(); } catch(_){} lwChartInstance = null; lwCandleSeries = null; }
+        const container = document.getElementById('lwChart');
+        container.innerHTML = '';
+
+        // ── Create chart (v4.1.3 API) ─────────────────────────────
+        lwChartInstance = LightweightCharts.createChart(container, {
+            width:  container.clientWidth,
+            height: 460,
+            layout: {
+                background: { type: LightweightCharts.ColorType.Solid, color: isDark ? '#161b22' : '#ffffff' },
+                textColor:  isDark ? '#e6edf3' : '#0d1117',
+                fontSize:   11,
+                fontFamily: "'Space Mono', monospace",
+            },
+            grid: {
+                vertLines: { color: isDark ? '#1c2333' : '#e8ecf0' },
+                horzLines: { color: isDark ? '#1c2333' : '#e8ecf0' },
+            },
+            crosshair:       { mode: LightweightCharts.CrosshairMode.Normal },
+            rightPriceScale: { borderColor: isDark ? '#21262d' : '#d0d7de' },
+            timeScale: {
+                borderColor:    isDark ? '#21262d' : '#d0d7de',
+                timeVisible:    true,
+                secondsVisible: false,
+            },
+            localization: { priceFormatter: p => p.toPrecision(6) },
         });
+
+        // ── Candlestick series ────────────────────────────────────
+        lwCandleSeries = lwChartInstance.addCandlestickSeries({
+            upColor:         '#3fb950',
+            downColor:       '#f85149',
+            borderUpColor:   '#56d364',
+            borderDownColor: '#ff7b72',
+            wickUpColor:     '#3fb950',
+            wickDownColor:   '#f85149',
+        });
+
+        const candles = klines.map(k => ({
+            time:  Math.floor(k[0] / 1000),  // unix seconds
+            open:  parseFloat(k[1]),
+            high:  parseFloat(k[2]),
+            low:   parseFloat(k[3]),
+            close: parseFloat(k[4]),
+        }));
+        lwCandleSeries.setData(candles);
+
+        // ── Entry price line (dashed blue) ────────────────────────
+        lwCandleSeries.createPriceLine({
+            price:            parseFloat(t.open),
+            color:            '#58a6ff',
+            lineWidth:        2,
+            lineStyle:        LightweightCharts.LineStyle.Dashed,
+            axisLabelVisible: true,
+            title:            `ENTRY  ${fmt(t.open, 5)}`,
+        });
+
+        // ── Max price line (dashed green/red per side) ────────────
+        if (t.max?.price) {
+            lwCandleSeries.createPriceLine({
+                price:            parseFloat(t.max.price),
+                color:            maxCol,
+                lineWidth:        2,
+                lineStyle:        LightweightCharts.LineStyle.Dashed,
+                axisLabelVisible: true,
+                title:            `MAX  ${fmtPct(t.max.delta_pct||0)}`,
+            });
+        }
+
+        // ── Current price line (dotted yellow) ───────────────────
+        lwCandleSeries.createPriceLine({
+            price:            parseFloat(t.current),
+            color:            '#e3b341',
+            lineWidth:        1,
+            lineStyle:        LightweightCharts.LineStyle.Dotted,
+            axisLabelVisible: true,
+            title:            'NOW',
+        });
+
+        // ── Markers: entry arrow + max-profit star ────────────────
+        const snap15m  = ts => Math.floor(ts / 900) * 900;
+        const entryTs  = snap15m(Math.floor(openTs / 1000));
+
+        // Find candle closest to max price
+        let maxCandleTs = null;
+        if (t.max?.price) {
+            const target = parseFloat(t.max.price);
+            let bestDiff = Infinity;
+            for (const c of candles) {
+                const probe = isS ? c.low : c.high;
+                const diff  = Math.abs(probe - target);
+                if (diff < bestDiff) { bestDiff = diff; maxCandleTs = c.time; }
+            }
+        }
+
+        const markers = [];
+
+        // Entry marker
+        markers.push({
+            time:     entryTs,
+            position: isS ? 'aboveBar' : 'belowBar',
+            color:    '#58a6ff',
+            shape:    isS ? 'arrowDown' : 'arrowUp',
+            text:     `▶ ${isS ? 'SHORT' : 'LONG'} @ ${fmt(t.open, 5)}`,
+            size:     2,
+        });
+
+        // Max profit marker
+        if (maxCandleTs && maxCandleTs !== entryTs) {
+            markers.push({
+                time:     maxCandleTs,
+                position: isS ? 'belowBar' : 'aboveBar',
+                color:    maxCol,
+                shape:    'circle',
+                text:     `★ MAX ${fmtPct(t.max?.delta_pct || 0)}`,
+                size:     1,
+            });
+        }
+
+        // setMarkers requires ascending time order
+        markers.sort((a, b) => a.time - b.time);
+        lwCandleSeries.setMarkers(markers);
+
+        // ── Fit and resize ────────────────────────────────────────
+        lwChartInstance.timeScale().fitContent();
+
+        const ro = new ResizeObserver(() => {
+            if (lwChartInstance) lwChartInstance.applyOptions({ width: container.clientWidth });
+        });
+        ro.observe(container);
+
+        document.getElementById('chartLoading').style.display = 'none';
+
+    } catch (err) {
+        console.error('openChart error:', err);
+        document.getElementById('chartLoadingText').textContent = `⚠️ ${err.message}`;
     }
 }
 
 function closeChart() {
     document.getElementById('chartSection').style.display = 'none';
-    document.getElementById('tv_chart_container').innerHTML = '';
-    document.getElementById('chartInfo').style.display = 'none';
+    if (lwChartInstance) { lwChartInstance.remove(); lwChartInstance = null; lwCandleSeries = null; }
 }
 
 // ─── MAIN RENDER ─────────────────────────────────────────────────────────
