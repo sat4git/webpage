@@ -599,13 +599,11 @@
                     <th onclick="sortBy('pair')">Pair <span class="sort-arrow">↕</span></th>
                     <th onclick="sortBy('side')">Side <span class="sort-arrow">↕</span></th>
                     <th onclick="sortBy('open')">Entry <span class="sort-arrow">↕</span></th>
-                    <th onclick="sortBy('current')">Current <span class="sort-arrow">↕</span></th>
                     <th onclick="sortBy('profit_pct')">P&L % <span class="sort-arrow">↕</span></th>
                     <th onclick="sortBy('max')">Max Δ% <span class="sort-arrow">↕</span></th>
                     <th onclick="sortBy('min')">Min Δ% <span class="sort-arrow">↕</span></th>
                     <th onclick="sortBy('rr')">Risk/Rew <span class="sort-arrow">↕</span></th>
-                    <th onclick="sortBy('dist')">Dist to Max <span class="sort-arrow">↕</span></th>
-                    <th>Trend</th>
+                    <th onclick="sortBy('candles')" title="15m candles elapsed since best profit price was reached">Candles Since Best ↕</th>
                 </tr>
             </thead>
             <tbody id="tableBody"></tbody>
@@ -721,25 +719,46 @@ function startRepeatingAlert(type) { playAlert(type); }
 function stopRepeatingAlert() {}
 
 // ─── NOTIFICATION SYSTEM ─────────────────────────────────────────────────
-const NOTIF_KEY = 'tm_notifications';
-let notifications = []; // { id, type, title, msg, time, dismissed }
+const NOTIF_KEY    = 'tm_notifications';
+const NOTIFIED_KEY = 'tm_notified'; // persist the notified set across sessions
+let notifications  = [];
 
 function loadNotifications() {
     try {
         const saved = localStorage.getItem(NOTIF_KEY);
-        if (saved) notifications = JSON.parse(saved);
+        notifications = saved ? JSON.parse(saved) : [];
+        // Ensure all IDs are integers (fix legacy float IDs)
+        notifications.forEach(n => { n.id = parseInt(n.id); });
     } catch(e) { notifications = []; }
 }
+
 function saveNotifications() {
-    // Keep only last 50, non-dismissed
-    const keep = notifications.filter(n => !n.dismissed).slice(-50);
-    notifications = keep;
-    try { localStorage.setItem(NOTIF_KEY, JSON.stringify(notifications)); } catch(e) {}
+    try {
+        // Keep last 50 undismissed + all dismissed (for badge accuracy)
+        const toSave = notifications.slice(-50);
+        localStorage.setItem(NOTIF_KEY, JSON.stringify(toSave));
+    } catch(e) {}
 }
+
+// Persist notified set so after reopen we don't re-fire sounds for old alerts
+function loadNotified() {
+    try {
+        const saved = localStorage.getItem(NOTIFIED_KEY);
+        if (saved) JSON.parse(saved).forEach(k => notified.add(k));
+    } catch(e) {}
+}
+function saveNotified() {
+    try {
+        localStorage.setItem(NOTIFIED_KEY, JSON.stringify([...notified]));
+    } catch(e) {}
+}
+
+let _notifCounter = Date.now();
+function nextNotifId() { return ++_notifCounter; }
 
 function pushNotification(type, title, msg) {
     const n = {
-        id:   Date.now() + Math.random(),
+        id:   nextNotifId(),  // always integer
         type, title, msg,
         time: new Date().toLocaleTimeString(),
         dismissed: false
@@ -751,6 +770,7 @@ function pushNotification(type, title, msg) {
 }
 
 function dismissNotif(id) {
+    id = parseInt(id);
     const card = document.querySelector(`[data-notif-id="${id}"]`);
     if (card) {
         card.classList.add('removing');
@@ -774,18 +794,15 @@ function renderNotifCard(n) {
             <div class="notif-msg">${n.msg}</div>
             <div class="notif-time">${n.time}</div>
         </div>
-        <div class="notif-close" onclick="dismissNotif(${n.id})">✕</div>
+        <div class="notif-close" onclick="event.stopPropagation();dismissNotif(${n.id})">✕</div>
     `;
-    // Click anywhere on card also dismisses
-    div.addEventListener('click', (e) => {
-        if (!e.target.classList.contains('notif-close')) dismissNotif(n.id);
-    });
+    div.addEventListener('click', () => dismissNotif(n.id));
     panel.appendChild(div);
 }
 
 function restoreNotifications() {
-    // Re-render any undismissed notifications from previous session (PWA persistence)
     loadNotifications();
+    loadNotified(); // restore which pairs already fired — prevents duplicate sounds on reopen
     const undismissed = notifications.filter(n => !n.dismissed);
     undismissed.forEach(n => renderNotifCard(n));
     updateBadge();
@@ -802,7 +819,7 @@ function updateBadge() {
     }
 }
 
-// Simple toast for non-alert system messages (left side, auto-dismiss)
+// Simple toast for non-alert system messages (bottom-left, auto-dismiss)
 let toastTimer;
 function showToast(msg) {
     const el = document.getElementById('toast');
@@ -866,7 +883,7 @@ function sortBy(col) {
     if (sortCol === col) sortAsc = !sortAsc;
     else { sortCol = col; sortAsc = false; }
     document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
-    const idx = ['pair','side','open','current','profit_pct','max','min','rr','dist','trend'].indexOf(col);
+    const idx = ['pair','side','open','profit_pct','max','min','rr','candles'].indexOf(col);
     if (idx >= 0) document.querySelectorAll('thead th')[idx]?.classList.add('sorted');
     renderTable(getSortedFiltered());
 }
@@ -885,15 +902,14 @@ function getSortedFiltered() {
     // sort
     trades.sort((a, b) => {
         let va, vb;
-        if (sortCol === 'pair')       { va = a.pair;        vb = b.pair; }
-        else if (sortCol === 'side')  { va = a.is_short?1:0; vb = b.is_short?1:0; }
-        else if (sortCol === 'open')  { va = a.open;        vb = b.open; }
-        else if (sortCol === 'current'){va = a.current;     vb = b.current; }
-        else if (sortCol === 'profit_pct') { va = a.profit_pct; vb = b.profit_pct; }
-        else if (sortCol === 'max')   { va = a.max?.delta_pct||0; vb = b.max?.delta_pct||0; }
-        else if (sortCol === 'min')   { va = a.min?.delta_pct||0; vb = b.min?.delta_pct||0; }
-        else if (sortCol === 'rr')    { va = getRR(a);      vb = getRR(b); }
-        else if (sortCol === 'dist')  { va = getDist(a);    vb = getDist(b); }
+        if (sortCol === 'pair')            { va = a.pair;              vb = b.pair; }
+        else if (sortCol === 'side')       { va = a.is_short?1:0;      vb = b.is_short?1:0; }
+        else if (sortCol === 'open')       { va = a.open;              vb = b.open; }
+        else if (sortCol === 'profit_pct') { va = a.profit_pct;        vb = b.profit_pct; }
+        else if (sortCol === 'max')        { va = a.max?.delta_pct||0; vb = b.max?.delta_pct||0; }
+        else if (sortCol === 'min')        { va = a.min?.delta_pct||0; vb = b.min?.delta_pct||0; }
+        else if (sortCol === 'rr')         { va = getRR(a);            vb = getRR(b); }
+        else if (sortCol === 'candles')    { va = getCandlesSinceBest(a); vb = getCandlesSinceBest(b); }
         else { va = 0; vb = 0; }
         if (typeof va === 'string') return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
         return sortAsc ? va - vb : vb - va;
@@ -918,12 +934,29 @@ function getRR(t) {
     if (minD === 0) return 0;
     return maxD / minD;
 }
-function getDist(t) {
-    // distance from current to max (potential left), as pct
-    const maxP = t.max?.price;
-    if (!maxP || !t.current) return 0;
-    return ((maxP - t.current) / t.current * 100);
+
+// Candles elapsed (15m) since the best-profit price was reached
+// For LONG: best = max.price reached at some point after open_date
+// For SHORT: best = min.price reached at some point after open_date
+// We derive this from open_date + a rough estimate:
+// Since we don't have max_time in JSON yet, we calculate from current time
+// minus open_date, capped as "unknown" if open_date missing.
+// When max_time IS added to JSON later this can be replaced with exact value.
+function getCandlesSinceBest(t) {
+    // If trade has max_time / min_time field use it directly
+    const bestTimeStr = t.is_short
+        ? (t.min?.time || t.min_time || null)
+        : (t.max?.time || t.max_time || null);
+    if (bestTimeStr) {
+        const bestTs = new Date(bestTimeStr.replace(' ', 'T')).getTime();
+        if (!isNaN(bestTs)) {
+            return Math.floor((Date.now() - bestTs) / (15 * 60 * 1000));
+        }
+    }
+    // Fallback: return -1 (shown as "—") when no timestamp available
+    return -1;
 }
+
 function fmt(n, d=5) { return parseFloat(n||0).toFixed(d); }
 function fmtPct(n)   { return (n>=0?'+':'')+parseFloat(n||0).toFixed(2)+'%'; }
 
@@ -951,15 +984,22 @@ function renderTable(trades) {
         const rr     = getRR(t);
         const rrFill = Math.min(rr / 5 * 100, 100);
         const rrCol  = rr >= 2 ? 'var(--green2)' : rr >= 1 ? 'var(--yellow)' : 'var(--red2)';
-        const dist   = getDist(t);
         const rowCls = t.profit_pct >= 1 ? 'tr-profit' : t.profit_pct <= -5 ? 'tr-loss' : '';
-        const isNew  = prevData[currentKey] && !prevData[currentKey]?.find(x=>x.pair===t.pair);
+        const candles = getCandlesSinceBest(t);
+        // Candle age colouring: fresh (green) → stale (red)
+        const candleCol = candles < 0 ? 'var(--muted)' :
+                          candles <= 4  ? 'var(--green2)' :
+                          candles <= 12 ? 'var(--yellow)' : 'var(--red2)';
+        const candleLabel = candles < 0 ? '—' : candles;
+        // Candle context label
+        const candleNote = candles < 0 ? 'add max_time to JSON' :
+                           candles === 0 ? 'just now' :
+                           candles === 1 ? '1 candle ago' : `${candles} candles ago`;
 
-        return `<tr class="${rowCls}${isNew?' row-new':''}">
+        return `<tr class="${rowCls}">
             <td><span class="pair-link" onclick="openChart('${t.pair}')">${t.pair}</span></td>
             <td><span class="side-badge ${isS?'s':'l'}">${isS?'S':'L'}</span></td>
             <td class="mono" style="font-size:12px;">${fmt(t.open)}</td>
-            <td class="mono" style="font-size:12px;font-weight:700;">${fmt(t.current)}</td>
             <td><span class="pct-val ${pPos?'pct-pos':'pct-neg'}">${fmtPct(t.profit_pct)}</span></td>
             <td><div class="delta-cell">
                 <span class="delta-main" style="color:${!isS?'var(--green2)':'var(--red2)'};">${fmtPct(t.max?.delta_pct||0)}</span>
@@ -973,10 +1013,12 @@ function renderTable(trades) {
                 <div class="rr-bar"><div class="rr-bar-fill" style="width:${rrFill}%;background:${rrCol};"></div></div>
                 <span class="rr-val" style="color:${rrCol};">${rr.toFixed(1)}x</span>
             </div></td>
-            <td><span class="dist-cell">${dist>=0?'+':''}${dist.toFixed(2)}%</span></td>
-            <td>${sparkline(t)}</td>
+            <td><div class="delta-cell">
+                <span class="delta-main" style="font-size:15px;font-weight:900;color:${candleCol};">${candleLabel}</span>
+                <span class="delta-sub">${candleNote}</span>
+            </div></td>
         </tr>`;
-    }).join('') || `<tr><td colspan="10" style="text-align:center;padding:40px;color:var(--muted);">No trades match the current filter.</td></tr>`;
+    }).join('') || `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted);">No trades match the current filter.</td></tr>`;
 }
 
 // ─── RENDER CARDS ────────────────────────────────────────────────────────
@@ -1057,6 +1099,7 @@ function renderSummary(trades) {
 // ─── ALERTS ──────────────────────────────────────────────────────────────
 function checkAlerts(trades, isManual) {
     if (!alertsEnabled) return;
+    let changed = false;
     trades.forEach(t => {
         const id = `${currentKey}-${t.pair}`;
         if (t.profit_pct >= 1.0) {
@@ -1064,16 +1107,19 @@ function checkAlerts(trades, isManual) {
                 startRepeatingAlert('profit');
                 pushNotification('profit', t.pair, `Hit +${t.profit_pct.toFixed(2)}% profit threshold`);
                 notified.add(id+'-profit');
+                changed = true;
             }
-        } else { notified.delete(id+'-profit'); }
+        } else { if (notified.delete(id+'-profit')) changed = true; }
         if (t.profit_pct <= -5.0) {
             if (!notified.has(id+'-loss')) {
                 startRepeatingAlert('loss');
                 pushNotification('loss', t.pair, `Dropped to ${t.profit_pct.toFixed(2)}% — loss threshold`);
                 notified.add(id+'-loss');
+                changed = true;
             }
-        } else { notified.delete(id+'-loss'); }
+        } else { if (notified.delete(id+'-loss')) changed = true; }
     });
+    if (changed) saveNotified();
 }
 
 // ─── LIGHTWEIGHT CHARTS ───────────────────────────────────────────────────
