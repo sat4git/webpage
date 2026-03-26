@@ -935,26 +935,90 @@ function getRR(t) {
     return maxD / minD;
 }
 
-// Candles elapsed (15m) since the best-profit price was reached
-// For LONG: best = max.price reached at some point after open_date
-// For SHORT: best = min.price reached at some point after open_date
-// We derive this from open_date + a rough estimate:
-// Since we don't have max_time in JSON yet, we calculate from current time
-// minus open_date, capped as "unknown" if open_date missing.
-// When max_time IS added to JSON later this can be replaced with exact value.
+// ─── CANDLES-SINCE-BEST CACHE (Binance-backed) ───────────────────────────
+// Cache key: `${pair}|${bestPrice}` → { candles: N, fetchedAt: ts }
+const bestCache   = {};
+const CACHE_TTL   = 15 * 60 * 1000; // re-fetch after 15 min
+const FETCH_DELAY = 300;             // ms between each request (rate-limit safe)
+let   fetchQueue  = [];
+let   fetchBusy   = false;
+
+function cacheKey(t) {
+    const price = t.is_short ? t.min?.price : t.max?.price;
+    return `${t.pair}|${price}`;
+}
+
+// Returns cached value (number) or -1 if not yet fetched, -2 if fetching
 function getCandlesSinceBest(t) {
-    // If trade has max_time / min_time field use it directly
-    const bestTimeStr = t.is_short
-        ? (t.min?.time || t.min_time || null)
-        : (t.max?.time || t.max_time || null);
-    if (bestTimeStr) {
-        const bestTs = new Date(bestTimeStr.replace(' ', 'T')).getTime();
-        if (!isNaN(bestTs)) {
-            return Math.floor((Date.now() - bestTs) / (15 * 60 * 1000));
-        }
+    const k = cacheKey(t);
+    const c = bestCache[k];
+    if (!c) return -1;            // not fetched yet → show loading
+    if (c.error) return -3;       // fetch failed → show error
+    return c.candles;
+}
+
+// Enqueue a fetch for a trade if not cached / stale
+function enqueueBestFetch(t) {
+    const k     = cacheKey(t);
+    const c     = bestCache[k];
+    const stale = !c || (Date.now() - c.fetchedAt > CACHE_TTL);
+    if (!stale || fetchQueue.find(x => x.pair === t.pair && x.is_short === t.is_short)) return;
+    fetchQueue.push(t);
+    drainQueue();
+}
+
+async function drainQueue() {
+    if (fetchBusy || fetchQueue.length === 0) return;
+    fetchBusy = true;
+    while (fetchQueue.length > 0) {
+        const t = fetchQueue.shift();
+        await fetchBestTime(t);
+        // Small delay to avoid hammering Binance
+        await new Promise(r => setTimeout(r, FETCH_DELAY));
     }
-    // Fallback: return -1 (shown as "—") when no timestamp available
-    return -1;
+    fetchBusy = false;
+    // Re-render table with fresh data
+    renderTable(getSortedFiltered());
+}
+
+async function fetchBestTime(t) {
+    const k          = cacheKey(t);
+    const isS        = t.is_short;
+    const bestPrice  = parseFloat(isS ? t.min?.price : t.max?.price);
+    const openDateStr = t.open_date || '';
+    if (!bestPrice || !openDateStr) {
+        bestCache[k] = { candles: -3, fetchedAt: Date.now(), error: true };
+        return;
+    }
+    const openTs = new Date(openDateStr.replace(' ', 'T')).getTime();
+    if (isNaN(openTs)) {
+        bestCache[k] = { candles: -3, fetchedAt: Date.now(), error: true };
+        return;
+    }
+    const sym = bSymbol(t.pair);
+    try {
+        const url = `https://fapi.binance.com/fapi/v1/klines?symbol=${sym}&interval=15m&startTime=${openTs}&limit=500`;
+        const r   = await fetch(url);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const klines = await r.json();
+        if (!Array.isArray(klines) || klines.length === 0) throw new Error('empty');
+
+        // Find candle whose high (long) or low (short) is closest to bestPrice
+        let bestCandleTs = null, bestDiff = Infinity;
+        for (const k2 of klines) {
+            const probe = isS ? parseFloat(k2[3]) : parseFloat(k2[2]); // low or high
+            const diff  = Math.abs(probe - bestPrice);
+            if (diff < bestDiff) { bestDiff = diff; bestCandleTs = k2[0]; }
+        }
+        if (!bestCandleTs) throw new Error('no match');
+
+        // Count 15m candles from that candle's open time to now
+        const elapsed = Math.floor((Date.now() - bestCandleTs) / (15 * 60 * 1000));
+        bestCache[k] = { candles: Math.max(0, elapsed), fetchedAt: Date.now(), error: false };
+    } catch(e) {
+        console.warn(`fetchBestTime failed for ${t.pair}:`, e.message);
+        bestCache[k] = { candles: -3, fetchedAt: Date.now(), error: true };
+    }
 }
 
 function fmt(n, d=5) { return parseFloat(n||0).toFixed(d); }
@@ -986,15 +1050,19 @@ function renderTable(trades) {
         const rrCol  = rr >= 2 ? 'var(--green2)' : rr >= 1 ? 'var(--yellow)' : 'var(--red2)';
         const rowCls = t.profit_pct >= 1 ? 'tr-profit' : t.profit_pct <= -5 ? 'tr-loss' : '';
         const candles = getCandlesSinceBest(t);
-        // Candle age colouring: fresh (green) → stale (red)
-        const candleCol = candles < 0 ? 'var(--muted)' :
-                          candles <= 4  ? 'var(--green2)' :
-                          candles <= 12 ? 'var(--yellow)' : 'var(--red2)';
-        const candleLabel = candles < 0 ? '—' : candles;
-        // Candle context label
-        const candleNote = candles < 0 ? 'add max_time to JSON' :
-                           candles === 0 ? 'just now' :
-                           candles === 1 ? '1 candle ago' : `${candles} candles ago`;
+        // Enqueue Binance fetch for this trade (no-op if cached/fresh)
+        enqueueBestFetch(t);
+        // Candle age colouring: fresh → stale
+        let candleCol, candleLabel, candleNote;
+        if (candles === -1) {
+            candleCol = 'var(--muted)'; candleLabel = '…'; candleNote = 'fetching from Binance';
+        } else if (candles === -3) {
+            candleCol = 'var(--muted2)'; candleLabel = '?'; candleNote = 'fetch failed';
+        } else {
+            candleCol   = candles <= 4 ? 'var(--green2)' : candles <= 12 ? 'var(--yellow)' : 'var(--red2)';
+            candleLabel = candles;
+            candleNote  = candles === 0 ? 'just now' : candles === 1 ? '1 candle ago' : `${candles} candles ago`;
+        }
 
         return `<tr class="${rowCls}">
             <td><span class="pair-link" onclick="openChart('${t.pair}')">${t.pair}</span></td>
