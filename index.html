@@ -397,16 +397,53 @@
         .spinner.on { display: inline-block; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ── TOAST ──────────────────────────────────────────────── */
-        #toast {
+        /* ── NOTIFICATION PANEL ─────────────────────────────────── */
+        #notifPanel {
             position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+            display: flex; flex-direction: column; gap: 8px;
+            max-width: 320px; pointer-events: none;
+        }
+        .notif-card {
             background: var(--surface); border: 1px solid var(--border2);
-            border-radius: var(--radius); padding: 12px 18px;
-            font-size: 13px; font-weight: 600; color: var(--text);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-            transform: translateY(80px); opacity: 0;
-            transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
-            pointer-events: none; max-width: 300px;
+            border-radius: var(--radius); padding: 12px 14px 12px 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            display: flex; align-items: flex-start; gap: 10px;
+            pointer-events: all; cursor: pointer;
+            animation: notifIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+            border-left: 4px solid var(--border2);
+        }
+        .notif-card.profit { border-left-color: var(--green2); }
+        .notif-card.loss   { border-left-color: var(--red2); }
+        .notif-card.info   { border-left-color: var(--primary); }
+        @keyframes notifIn { from { opacity:0; transform: translateX(40px); } to { opacity:1; transform: translateX(0); } }
+        @keyframes notifOut { to { opacity:0; transform: translateX(40px); } }
+        .notif-card.removing { animation: notifOut 0.2s ease forwards; }
+        .notif-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+        .notif-body { flex: 1; min-width: 0; }
+        .notif-title { font-family: var(--display); font-size: 12px; font-weight: 900; letter-spacing: 0.04em; color: var(--text); }
+        .notif-msg   { font-size: 12px; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
+        .notif-time  { font-size: 10px; color: var(--muted2); margin-top: 4px; font-family: var(--mono); }
+        .notif-close { font-size: 14px; color: var(--muted2); flex-shrink: 0; line-height: 1; padding: 2px 4px; border-radius: 4px; transition: color 0.15s; }
+        .notif-close:hover { color: var(--text); }
+        /* Notification bell badge */
+        #alertBadge {
+            position: absolute; top: -4px; right: -4px;
+            background: var(--red); color: #fff;
+            font-size: 9px; font-weight: 700; font-family: var(--mono);
+            width: 16px; height: 16px; border-radius: 50%;
+            display: none; align-items: center; justify-content: center;
+            border: 2px solid var(--bg);
+        }
+        #alertBtn { position: relative; }
+        /* Simple toast for non-alert messages */
+        #toast {
+            position: fixed; bottom: 24px; left: 24px; z-index: 9998;
+            background: var(--surface); border: 1px solid var(--border2);
+            border-radius: var(--radius); padding: 10px 16px;
+            font-size: 12px; font-weight: 600; color: var(--text);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+            transform: translateY(60px); opacity: 0;
+            transition: all 0.25s ease; pointer-events: none;
         }
         #toast.show { transform: translateY(0); opacity: 1; }
 
@@ -453,7 +490,7 @@
             <div class="stat-pill"><span class="dot dot-red"></span><span id="gLoss">— L</span></div>
         </div>
         <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">🌙</button>
-        <button class="icon-btn" id="alertBtn" onclick="toggleAlerts()" title="Toggle alerts">🔕</button>
+        <button class="icon-btn" id="alertBtn" onclick="toggleAlerts()" title="Toggle alerts">🔕<span id="alertBadge"></span></button>
         <button class="icon-btn" onclick="sync()" title="Manual sync">↺</button>
     </div>
 </header>
@@ -589,6 +626,7 @@
 </div>
 
 </div><!-- /app -->
+<div id="notifPanel"></div>
 <div id="toast"></div>
 
 <script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
@@ -682,14 +720,96 @@ function playAlert(type = 'profit') {
 function startRepeatingAlert(type) { playAlert(type); }
 function stopRepeatingAlert() {}
 
-// ─── TOAST ───────────────────────────────────────────────────────────────
+// ─── NOTIFICATION SYSTEM ─────────────────────────────────────────────────
+const NOTIF_KEY = 'tm_notifications';
+let notifications = []; // { id, type, title, msg, time, dismissed }
+
+function loadNotifications() {
+    try {
+        const saved = localStorage.getItem(NOTIF_KEY);
+        if (saved) notifications = JSON.parse(saved);
+    } catch(e) { notifications = []; }
+}
+function saveNotifications() {
+    // Keep only last 50, non-dismissed
+    const keep = notifications.filter(n => !n.dismissed).slice(-50);
+    notifications = keep;
+    try { localStorage.setItem(NOTIF_KEY, JSON.stringify(notifications)); } catch(e) {}
+}
+
+function pushNotification(type, title, msg) {
+    const n = {
+        id:   Date.now() + Math.random(),
+        type, title, msg,
+        time: new Date().toLocaleTimeString(),
+        dismissed: false
+    };
+    notifications.push(n);
+    saveNotifications();
+    renderNotifCard(n);
+    updateBadge();
+}
+
+function dismissNotif(id) {
+    const card = document.querySelector(`[data-notif-id="${id}"]`);
+    if (card) {
+        card.classList.add('removing');
+        setTimeout(() => card.remove(), 200);
+    }
+    const n = notifications.find(x => x.id === id);
+    if (n) { n.dismissed = true; saveNotifications(); }
+    updateBadge();
+}
+
+function renderNotifCard(n) {
+    const panel = document.getElementById('notifPanel');
+    const icon  = n.type === 'profit' ? '🟢' : n.type === 'loss' ? '🔴' : 'ℹ️';
+    const div   = document.createElement('div');
+    div.className = `notif-card ${n.type}`;
+    div.dataset.notifId = n.id;
+    div.innerHTML = `
+        <div class="notif-icon">${icon}</div>
+        <div class="notif-body">
+            <div class="notif-title">${n.title}</div>
+            <div class="notif-msg">${n.msg}</div>
+            <div class="notif-time">${n.time}</div>
+        </div>
+        <div class="notif-close" onclick="dismissNotif(${n.id})">✕</div>
+    `;
+    // Click anywhere on card also dismisses
+    div.addEventListener('click', (e) => {
+        if (!e.target.classList.contains('notif-close')) dismissNotif(n.id);
+    });
+    panel.appendChild(div);
+}
+
+function restoreNotifications() {
+    // Re-render any undismissed notifications from previous session (PWA persistence)
+    loadNotifications();
+    const undismissed = notifications.filter(n => !n.dismissed);
+    undismissed.forEach(n => renderNotifCard(n));
+    updateBadge();
+}
+
+function updateBadge() {
+    const count = notifications.filter(n => !n.dismissed).length;
+    const badge = document.getElementById('alertBadge');
+    if (count > 0) {
+        badge.textContent = count > 9 ? '9+' : count;
+        badge.style.display = 'flex';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+// Simple toast for non-alert system messages (left side, auto-dismiss)
 let toastTimer;
 function showToast(msg) {
     const el = document.getElementById('toast');
     el.textContent = msg;
     el.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
 }
 
 // ─── THEME ───────────────────────────────────────────────────────────────
@@ -711,7 +831,10 @@ function toggleAlerts() {
     alertsEnabled = !alertsEnabled;
     const btn = document.getElementById('alertBtn');
     btn.classList.toggle('on', alertsEnabled);
-    btn.textContent = alertsEnabled ? '🔔' : '🔕';
+    // preserve badge inside button
+    const badge = document.getElementById('alertBadge');
+    btn.innerHTML = (alertsEnabled ? '🔔' : '🔕');
+    btn.appendChild(badge);
     showToast(alertsEnabled ? '🔔 Alerts enabled' : '🔕 Alerts disabled');
 }
 
@@ -934,27 +1057,23 @@ function renderSummary(trades) {
 // ─── ALERTS ──────────────────────────────────────────────────────────────
 function checkAlerts(trades, isManual) {
     if (!alertsEnabled) return;
-    let anyActive = false;
     trades.forEach(t => {
         const id = `${currentKey}-${t.pair}`;
         if (t.profit_pct >= 1.0) {
-            anyActive = true;
             if (!notified.has(id+'-profit')) {
                 startRepeatingAlert('profit');
-                showToast(`🟢 ${t.pair} hit +${t.profit_pct.toFixed(2)}%!`);
+                pushNotification('profit', t.pair, `Hit +${t.profit_pct.toFixed(2)}% profit threshold`);
                 notified.add(id+'-profit');
             }
         } else { notified.delete(id+'-profit'); }
         if (t.profit_pct <= -5.0) {
-            anyActive = true;
             if (!notified.has(id+'-loss')) {
                 startRepeatingAlert('loss');
-                showToast(`🔴 ${t.pair} dropped ${t.profit_pct.toFixed(2)}%!`);
+                pushNotification('loss', t.pair, `Dropped to ${t.profit_pct.toFixed(2)}% — loss threshold`);
                 notified.add(id+'-loss');
             }
         } else { notified.delete(id+'-loss'); }
     });
-    if (!anyActive) stopRepeatingAlert();
 }
 
 // ─── LIGHTWEIGHT CHARTS ───────────────────────────────────────────────────
@@ -1066,15 +1185,19 @@ async function openChart(pair) {
             title:            `ENTRY  ${fmt(t.open, 5)}`,
         });
 
-        // ── Max price line (dashed green/red per side) ────────────
-        if (t.max?.price) {
+        // ── Best-profit price line ────────────────────────────────
+        // For LONG: best profit = highest price reached = t.max.price
+        // For SHORT: best profit = lowest price reached = t.min.price
+        const bestProfitPrice = isS ? t.min?.price : t.max?.price;
+        const bestProfitDelta = isS ? t.min?.delta_pct : t.max?.delta_pct;
+        if (bestProfitPrice) {
             lwCandleSeries.createPriceLine({
-                price:            parseFloat(t.max.price),
+                price:            parseFloat(bestProfitPrice),
                 color:            maxCol,
                 lineWidth:        2,
                 lineStyle:        LightweightCharts.LineStyle.Dashed,
                 axisLabelVisible: true,
-                title:            `MAX  ${fmtPct(t.max.delta_pct||0)}`,
+                title:            `BEST  ${fmtPct(bestProfitDelta||0)}`,
             });
         }
 
@@ -1088,25 +1211,26 @@ async function openChart(pair) {
             title:            'NOW',
         });
 
-        // ── Markers: entry arrow + max-profit star ────────────────
-        const snap15m  = ts => Math.floor(ts / 900) * 900;
-        const entryTs  = snap15m(Math.floor(openTs / 1000));
+        // ── Markers: entry arrow + best-profit star ───────────────
+        const snap15m = ts => Math.floor(ts / 900) * 900;
+        const entryTs = snap15m(Math.floor(openTs / 1000));
 
-        // Find candle closest to max price
-        let maxCandleTs = null;
-        if (t.max?.price) {
-            const target = parseFloat(t.max.price);
+        // Find candle closest to best-profit price
+        // LONG: scan highs for t.max.price  |  SHORT: scan lows for t.min.price
+        let bestCandleTs = null;
+        if (bestProfitPrice) {
+            const target = parseFloat(bestProfitPrice);
             let bestDiff = Infinity;
             for (const c of candles) {
                 const probe = isS ? c.low : c.high;
                 const diff  = Math.abs(probe - target);
-                if (diff < bestDiff) { bestDiff = diff; maxCandleTs = c.time; }
+                if (diff < bestDiff) { bestDiff = diff; bestCandleTs = c.time; }
             }
         }
 
         const markers = [];
 
-        // Entry marker
+        // Entry marker — SHORT arrow above bar, LONG arrow below bar
         markers.push({
             time:     entryTs,
             position: isS ? 'aboveBar' : 'belowBar',
@@ -1116,14 +1240,14 @@ async function openChart(pair) {
             size:     2,
         });
 
-        // Max profit marker
-        if (maxCandleTs && maxCandleTs !== entryTs) {
+        // Best-profit marker — opposite side of entry arrow
+        if (bestCandleTs && bestCandleTs !== entryTs) {
             markers.push({
-                time:     maxCandleTs,
+                time:     bestCandleTs,
                 position: isS ? 'belowBar' : 'aboveBar',
                 color:    maxCol,
                 shape:    'circle',
-                text:     `★ MAX ${fmtPct(t.max?.delta_pct || 0)}`,
+                text:     `★ BEST ${fmtPct(bestProfitDelta || 0)}`,
                 size:     1,
             });
         }
@@ -1189,6 +1313,7 @@ async function sync() {
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
 }
+restoreNotifications();
 sync();
 </script>
 </body>
